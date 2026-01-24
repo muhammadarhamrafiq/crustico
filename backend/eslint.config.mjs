@@ -34,4 +34,5 @@ export default defineConfig([
             '@typescript-eslint/explicit-function-return-type': 'off',
         },
     },
+    prettierConfig
 ])

@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Product {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  sku         String  @unique
+  slug        String  @unique
+  basePrice   Decimal @map("base_price") @db.Decimal(10, 2)
+  description String?
+  image       String?
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime?  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  variants          Variant[]
+  productCategories CategoryProduct[]
+  productDeals      DealItem[]
+
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("products")
+}
+
+model Variant {
+  id            String  @id @default(uuid())
+  label         String
+  description   String?
+  priceModifier Decimal @default(0) @map("price_modifier") @db.Decimal(10, 2)
+  productId     String  @map("product_id")
+
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productDeals DealItem[]
+
+  @@unique([productId, label])
+  @@index([productId])
+  @@map("variants")
+}
+
+model Category {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+
+  CategoryProducts CategoryProduct[]
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime?  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("categories")
+}
+
+model CategoryProduct {
+  productId  String @map("product_id")
+  categoryId String @map("category_id")
+
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId], name: "category_product_pkey")
+  @@map("category_products")
+}
+
+model Deal {
+  id            String    @id @default(uuid())
+  slug          String    @unique
+  name          String
+  description   String?
+  priceModifier Decimal   @default(0) @map("price_modifier") @db.Decimal(10, 2)
+  startDate     DateTime? @map("start_date")
+  endDate       DateTime? @map("end_date")
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime?  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  dealItems DealItem[]
+
+  @@index([createdAt])
+  @@index([deletedAt])
+  @@map("deals")
+}
+
+model DealItem {
+  id               String  @id @default(uuid())
+  dealId           String  @map("deal_id")
+  productId        String  @map("product_id")
+  productVariantId String? @map("product_variant_id")
+  quantity         Int     @default(1)
+
+  deal           Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productVariant Variant? @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+
+  @@unique([dealId, productId, productVariantId], name: "unique_deal_item")
+  @@index([dealId])
+  @@index([productId])
+  @@index([productVariantId])
+  @@map("deal_items")
+}
