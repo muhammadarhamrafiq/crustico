@@ -153,7 +153,7 @@ ALTER TABLE "products"
     ADD CONSTRAINT "products_base_price_non_negative" CHECK ("base_price" >= 0);
 
 ALTER TABLE "variants"
-    ADD CONSTRAINT "variants_label_length" CHECK (LENGTH("label") >= 2),
+    ADD CONSTRAINT "variants_label_length" CHECK (LENGTH("label") >= 1),
     ADD CONSTRAINT "variants_price_modifier_non_negative" CHECK ("price_modifier" >= 0);
 
 ALTER TABLE "categories"
