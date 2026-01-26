@@ -3,6 +3,14 @@ import ProductRepo from '../repositories/product.repository'
 import type { Request, Response } from 'express'
 import { ApiResponse } from '../utils/apiResponse'
 
+export const uploadImage = asyncHandler(async (req: Request, res: Response) => {
+    return res.status(200).json(
+        new ApiResponse(200, 'Image uploaded successfully', {
+            url: `${req.file?.path}`,
+        })
+    )
+})
+
 export const createProduct = asyncHandler(async (req: Request, res: Response) => {
     const product = await ProductRepo.createProduct(req.body)
     return res.status(201).json(new ApiResponse(201, 'Product created successfully', product))

@@ -16,7 +16,7 @@ export const createProductSchema = z.object({
         .min(3, 'Slug must be at least 3 characters long')
         .toLowerCase()
         .regex(/^[a-z0-9-]+$/, 'slug must only contain lowercase letters, numbers and hyphens'),
-    image: z.url().optional().default(''),
+    image: z.string().optional().default(''),
     categoryIds: z
         .array(z.string())
         .transform((ids) => (ids ? Array.from(new Set(ids)) : undefined))
