@@ -1,30 +1,21 @@
-import swaggerJsDoc from 'swagger-jsdoc'
-import type { Options } from 'swagger-jsdoc'
+import { OpenAPIRegistry, OpenApiGeneratorV3 } from '@asteasolutions/zod-to-openapi'
+import registerPaths from '../docs'
 
-const options: Options = {
-    definition: {
-        openapi: '3.0.0',
-        info: {
-            title: 'Crustico API Documentation',
-            version: '1.0.0',
-            description:
-                'API documentation for Crustico application a firm mangement application for a fast food resturant',
-        },
-        tags: [
-            {
-                name: 'Products',
-                description: 'API endpoints for managing products',
-            },
-        ],
-        servers: [
-            {
-                url: 'http://localhost:8080/api/v1',
-                description: 'Local development server',
-            },
-        ],
+export const registry = new OpenAPIRegistry()
+registerPaths()
+
+export const openApiDoc = new OpenApiGeneratorV3(registry.definitions).generateDocument({
+    openapi: '3.0.0',
+    info: {
+        title: 'Crustico Api',
+        version: '1.0.0',
+        description: 'API documentation for Crustico application',
     },
-    apis: ['src/routes/*.ts'],
-}
-
-const specs = swaggerJsDoc(options)
-export default specs
+    servers: [
+        {
+            url: `http://localhost:${process.env.PORT || 8080}/api/v1`,
+            description: 'Local development server',
+        },
+    ],
+    tags: [{ name: 'Products', description: 'Operations related to products' }],
+})

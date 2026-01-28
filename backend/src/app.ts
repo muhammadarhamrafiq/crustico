@@ -7,7 +7,7 @@ import path from 'path'
 import router from './routes'
 import { errorHandler } from './middlewares/error.middleware'
 import SwaggerUi from 'swagger-ui-express'
-import swaggerSpecs from './lib/swagger'
+import { openApiDoc } from './lib/swagger'
 
 const app = express()
 startCleanUpJob()
@@ -21,9 +21,15 @@ app.use(express.urlencoded({ extended: true }))
 app.use(
     '/api-docs',
     SwaggerUi.serve,
-    SwaggerUi.setup(swaggerSpecs, {
+    SwaggerUi.setup(openApiDoc, {
+        customCss: '.swagger-ui .topbar { display: none }',
         customSiteTitle: 'Api Documentation',
         isExplorer: false,
+        swaggerOptions: {
+            defaultModelsExpandDepth: -1, // Hide schemas section
+            docExpansion: 'list', // Collapse operations by default
+            filter: true,
+        },
     })
 )
 app.use('/image', express.static(path.join(__dirname, '../uploads/storage')))
@@ -41,7 +47,7 @@ app.get('/', (_req, res) => {
     })
 })
 app.get('/api-docs.json', (_req, res) => {
-    res.status(200).json(swaggerSpecs)
+    res.status(200).json(openApiDoc)
 })
 
 app.use(errorHandler)
