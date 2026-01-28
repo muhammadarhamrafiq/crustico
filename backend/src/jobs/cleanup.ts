@@ -2,7 +2,7 @@ import cron from 'node-cron'
 import { cleanUpTempFiles } from '../utils/cleanUp'
 
 const createCleanupJob = () => {
-    cron.schedule('*/2 * * * *', cleanUpTempFiles)
+    cron.schedule('*/10 * * * *', cleanUpTempFiles)
 }
 
 export default createCleanupJob

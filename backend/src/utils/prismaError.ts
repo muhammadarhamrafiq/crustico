@@ -17,7 +17,13 @@ export const handlePrismaError = (err: PrismaClientKnownRequestError): ApiRespon
         case 'P2003':
             return handleInvalidReferenceError(err)
         default:
-            return new ApiResponse(400, 'Database Error')
+            return new ApiResponse(
+                400,
+                'Database Error',
+                process.env.NODE_ENV !== 'production'
+                    ? { mesage: err.message, stack: err.stack }
+                    : undefined
+            )
     }
 }
 
@@ -30,7 +36,13 @@ const handleUniqueConstraintError = (err: PrismaClientKnownRequestError): ApiRes
 
     const field = driverError?.cause?.constraint?.fields[0]
 
-    return new ApiResponse(409, `${field} already exist id ${modelName}`)
+    return new ApiResponse(
+        409,
+        `${field} already exist in ${modelName}`,
+        process.env.NODE_ENV !== 'production'
+            ? { mesage: err.message, stack: err.stack }
+            : undefined
+    )
 }
 
 const handleInvalidReferenceError = (err: PrismaClientKnownRequestError): ApiResponse => {
@@ -40,5 +52,11 @@ const handleInvalidReferenceError = (err: PrismaClientKnownRequestError): ApiRes
     const driverError = JSON.parse(stringified)
     const index: string = driverError.cause.constraint.index
 
-    return new ApiResponse(404, foriegnKeyErrorMessages[index] || 'Referenced resource not found')
+    return new ApiResponse(
+        404,
+        foriegnKeyErrorMessages[index] || 'Referenced resource not found',
+        process.env.NODE_ENV !== 'production'
+            ? { mesage: err.message, stack: err.stack }
+            : undefined
+    )
 }

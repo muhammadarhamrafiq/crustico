@@ -2,8 +2,10 @@ import { asyncHandler } from '../utils/asynHandler'
 import ProductRepo from '../repositories/product.repository'
 import type { Request, Response } from 'express'
 import { ApiResponse } from '../utils/apiResponse'
+import { ApiError } from '../utils/apiError'
 
 export const uploadImage = asyncHandler(async (req: Request, res: Response) => {
+    if (!req.file) throw new ApiError(400, 'No file uploaded')
     return res.status(200).json(
         new ApiResponse(200, 'Image uploaded successfully', {
             url: `${req.file?.path}`,

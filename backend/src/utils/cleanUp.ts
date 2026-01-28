@@ -1,5 +1,6 @@
 import path from 'path'
 import fs from 'fs/promises'
+import logger from '../lib/logger'
 
 const TEMP_DIR = path.join(process.cwd(), 'uploads/tmp')
 const TTL = 15 * 60 * 1000 // 15 minutes in milliseconds
@@ -16,10 +17,10 @@ export const cleanUpTempFiles = async () => {
             const age = now - stats.mtimeMs
             if (age > TTL) {
                 await fs.unlink(filePath)
-                console.log(`Deleted temp file: ${filePath}`)
+                logger.info(`Deleted temp file: ${filePath}`)
             }
         }
     } catch (err) {
-        console.log('Error during the temp file cleanup:', err)
+        logger.error({ error: err }, 'Error while cleaning the tmp data')
     }
 }

@@ -3,6 +3,7 @@ export class ApiError extends Error {
 
     constructor(statusCode: number, message: string) {
         super(message)
+        Error.captureStackTrace(this, this.constructor)
         this.statusCode = statusCode
     }
 }
