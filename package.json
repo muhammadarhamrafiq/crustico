@@ -1,0 +1,32 @@
+{
+  "name": "crustico",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "workspaces": ["frontend", "backend"],
+  "scripts": {
+    "dev": "npm -w backend run dev",
+    "prepare": "husky"
+  },
+  "lint-staged":{
+    "backend/src/**/*.{js,ts}": [
+      "npm -w backend lint:fix",
+      "npm -w backend format"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/muhammadarhamrafiq/crustico.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/muhammadarhamrafiq/crustico/issues"
+  },
+  "homepage": "https://github.com/muhammadarhamrafiq/crustico#readme",
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7"
+  }
+}
