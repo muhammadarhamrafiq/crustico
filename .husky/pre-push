@@ -1,0 +1,2 @@
+echo "Pre Push is running..."
+npm -w backend run test

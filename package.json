@@ -3,12 +3,15 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "workspaces": ["frontend", "backend"],
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "scripts": {
     "dev": "npm -w backend run dev",
     "prepare": "husky"
   },
-  "lint-staged":{
+  "lint-staged": {
     "backend/src/**/*.{js,ts}": [
       "npm -w backend lint:fix",
       "npm -w backend format"
