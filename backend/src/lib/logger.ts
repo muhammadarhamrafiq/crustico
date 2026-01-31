@@ -1,6 +1,7 @@
 import pino from 'pino'
 
 const isProd = process.env.NODE_ENV === 'production'
+const isTest = process.env.NODE_ENV === 'testing'
 
 const devTransport: pino.TransportSingleOptions = {
     target: 'pino-pretty',
@@ -12,7 +13,7 @@ const devTransport: pino.TransportSingleOptions = {
 }
 
 const logger = pino({
-    level: isProd ? 'info' : 'debug',
+    level: isTest ? 'silent' : isProd ? 'info' : 'debug',
     ...(isProd ? {} : { transport: devTransport }),
 })
 

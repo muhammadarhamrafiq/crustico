@@ -13,8 +13,8 @@
   },
   "lint-staged": {
     "backend/src/**/*.{js,ts}": [
-      "npm -w backend lint:fix",
-      "npm -w backend format"
+      "npm -w backend run lint:fix",
+      "npm -w backend run format"
     ]
   },
   "repository": {

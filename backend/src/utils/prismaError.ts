@@ -53,7 +53,7 @@ const handleInvalidReferenceError = (err: PrismaClientKnownRequestError): ApiRes
     const index: string = driverError.cause.constraint.index
 
     return new ApiResponse(
-        404,
+        422,
         foriegnKeyErrorMessages[index] || 'Referenced resource not found',
         process.env.NODE_ENV !== 'production'
             ? { mesage: err.message, stack: err.stack }

@@ -1,8 +1,8 @@
 import { asyncHandler } from '../utils/asynHandler'
-import ProductRepo from '../repositories/product.repository'
 import type { Request, Response } from 'express'
 import { ApiResponse } from '../utils/apiResponse'
 import { ApiError } from '../utils/apiError'
+import ProductService from '../services/products.services'
 
 export const uploadImage = asyncHandler(async (req: Request, res: Response) => {
     if (!req.file) throw new ApiError(400, 'No file uploaded')
@@ -14,6 +14,7 @@ export const uploadImage = asyncHandler(async (req: Request, res: Response) => {
 })
 
 export const createProduct = asyncHandler(async (req: Request, res: Response) => {
-    const product = await ProductRepo.createProduct(req.body)
-    return res.status(201).json(new ApiResponse(201, 'Product created successfully', product))
+    const productData = req.body
+    const newProduct = await ProductService.createProduct(productData)
+    return res.status(201).json(new ApiResponse(201, 'Product created successfully', newProduct))
 })

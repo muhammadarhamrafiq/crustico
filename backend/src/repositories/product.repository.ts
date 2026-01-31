@@ -24,6 +24,10 @@ class ProductRepo {
                       }
                     : {},
             },
+            include: {
+                variants: true,
+                productCategories: true,
+            },
         })
         return product
     }

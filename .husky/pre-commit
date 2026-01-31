@@ -1,2 +1,1 @@
-echo "PreCommit is running..."
 npx lint-staged

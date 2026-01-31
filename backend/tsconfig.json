@@ -23,5 +23,5 @@
     "esModuleInterop": true
   },
   "include": ["src/**/*"],
-  "exclude": [".prettierrc"]
+  "exclude": [".prettierrc", "tests/**/*.test.ts"]
 }
