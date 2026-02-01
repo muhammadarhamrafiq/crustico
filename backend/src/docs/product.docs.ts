@@ -4,9 +4,15 @@ import {
     ConflictErrorSchema,
     InternalServerErrorSchema,
     NotFoundErrorSchema,
+    UnprocessableEntityErrorSchema,
     UnsupportedMediaTypeErrorSchema,
 } from '../schemas/error.schema'
-import { ProductSchema } from '../schemas/productValidation.schemas'
+import {
+    CreateProductResponseSchema,
+    createProductSchema,
+    UpdateProductResponseSchema,
+    updateProductSchema,
+} from '../schemas/productValidation.schemas'
 
 const registerPaths = () => {
     // Register the /product/upload-image endpoint
@@ -95,7 +101,7 @@ const registerPaths = () => {
         },
     })
 
-    // Register the /product/add endpoint
+    registry.register('createProductSchema', createProductSchema)
     registry.registerPath({
         method: 'post',
         path: '/product/add',
@@ -118,7 +124,7 @@ const registerPaths = () => {
                 description: 'Product created successfully',
                 content: {
                     'application/json': {
-                        schema: ProductSchema,
+                        schema: CreateProductResponseSchema,
                     },
                 },
             },
@@ -131,7 +137,86 @@ const registerPaths = () => {
                 },
             },
             404: {
-                description: 'Category/Image not Found',
+                description: 'Image not Found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
+                    },
+                },
+            },
+            409: {
+                description: 'A unique value i.e name, sku, slug is already used',
+                content: {
+                    'application/json': {
+                        schema: ConflictErrorSchema,
+                    },
+                },
+            },
+            422: {
+                description: 'Invalid Category Reference',
+                content: {
+                    'application/json': {
+                        schema: UnprocessableEntityErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.register('updateProductSchema', updateProductSchema)
+    registry.registerPath({
+        method: 'patch',
+        path: '/product/{id}/update',
+        tags: ['Products'],
+        parameters: [
+            {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the product to update',
+                },
+            },
+        ],
+        requestBody: {
+            required: true,
+            content: {
+                'application/json': {
+                    schema: {
+                        $ref: '#/components/schemas/updateProductSchema',
+                    },
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: 'Product updated successfully',
+                content: {
+                    'application/json': {
+                        schema: UpdateProductResponseSchema,
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid input data',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Product not found',
                 content: {
                     'application/json': {
                         schema: NotFoundErrorSchema,

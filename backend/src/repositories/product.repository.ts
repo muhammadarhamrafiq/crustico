@@ -1,6 +1,14 @@
 import prisma from '../lib/prisma'
 import type { createProductInput } from '../schemas/productValidation.schemas'
 
+interface UpdateProductData {
+    name?: string
+    sku?: string
+    slug?: string
+    basePrice?: number
+    description?: string
+}
+
 class ProductRepo {
     static async createProduct(data: createProductInput) {
         const product = await prisma.product.create({
@@ -30,6 +38,17 @@ class ProductRepo {
             },
         })
         return product
+    }
+
+    static async updateProduct(id: string, data: UpdateProductData) {
+        const updatedProduct = await prisma.product.update({
+            where: {
+                id: id,
+            },
+            data,
+        })
+
+        return updatedProduct
     }
 
     static async validateUniqueConstraints(name: string, sku: string, slug: string) {

@@ -18,3 +18,12 @@ export const createProduct = asyncHandler(async (req: Request, res: Response) =>
     const newProduct = await ProductService.createProduct(productData)
     return res.status(201).json(new ApiResponse(201, 'Product created successfully', newProduct))
 })
+
+export const updateProduct = asyncHandler(async (req: Request, res: Response) => {
+    const productData = req.body
+    const productId = req.params.id
+    const updatedProduct = await ProductService.updateProduct(productId as string, productData)
+    return res
+        .status(200)
+        .json(new ApiResponse(200, 'Product updated successfully', updatedProduct))
+})

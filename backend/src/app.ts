@@ -26,8 +26,8 @@ app.use(
         customSiteTitle: 'Api Documentation',
         isExplorer: false,
         swaggerOptions: {
-            defaultModelsExpandDepth: -1, // Hide schemas section
-            docExpansion: 'list', // Collapse operations by default
+            defaultModelsExpandDepth: -1,
+            docExpansion: 'list',
             filter: true,
         },
     })

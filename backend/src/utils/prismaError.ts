@@ -16,6 +16,8 @@ export const handlePrismaError = (err: PrismaClientKnownRequestError): ApiRespon
             return handleUniqueConstraintError(err)
         case 'P2003':
             return handleInvalidReferenceError(err)
+        case 'P2025':
+            return handleRecordNotFoundError(err)
         default:
             return new ApiResponse(
                 400,
@@ -57,6 +59,16 @@ const handleInvalidReferenceError = (err: PrismaClientKnownRequestError): ApiRes
         foriegnKeyErrorMessages[index] || 'Referenced resource not found',
         process.env.NODE_ENV !== 'production'
             ? { mesage: err.message, stack: err.stack }
+            : undefined
+    )
+}
+
+const handleRecordNotFoundError = (err: PrismaClientKnownRequestError): ApiResponse => {
+    return new ApiResponse(
+        404,
+        `${err.meta?.modelName} not found`,
+        process.env.NODE_ENV !== 'production'
+            ? { message: err.message, stack: err.stack }
             : undefined
     )
 }

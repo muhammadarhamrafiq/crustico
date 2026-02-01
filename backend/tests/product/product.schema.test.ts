@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { createProductSchema } from '../../src/schemas/productValidation.schemas'
+import {
+    createProductSchema,
+    updateProductSchema,
+} from '../../src/schemas/productValidation.schemas'
 
 describe('createProductSchema', () => {
     // ✅ Happy path
@@ -30,7 +33,7 @@ describe('createProductSchema', () => {
         expect(result.success).toBe(true)
     })
 
-    const badInputs: { reason: string; input: any }[] = [
+    const badInputs: { reason: string; input: object }[] = [
         {
             reason: 'name too short',
             input: { name: 'A', basePrice: 10, sku: 'SKU-001', slug: 'product-a' },
@@ -108,5 +111,39 @@ describe('createProductSchema', () => {
         expect(result.image).toBe('')
         expect(result.variants).toBeUndefined()
         expect(result.categoryIds).toBeUndefined()
+    })
+})
+
+describe('Update Product Schema', () => {
+    it('should not accept the empty object', () => {
+        const result = updateProductSchema.safeParse({})
+        expect(result.success).toBe(false)
+    })
+
+    it('should accept partial updates', () => {
+        const result = updateProductSchema.safeParse({
+            name: 'Updated Product Name',
+            basePrice: 25.5,
+        })
+
+        expect(result.success).toBe(true)
+    })
+
+    it('should reject invalid updates', () => {
+        const result = updateProductSchema.safeParse({
+            name: 'A',
+            basePrice: 15.67,
+        })
+
+        expect(result.success).toBe(false)
+    })
+
+    it('should reject the invalid fields', () => {
+        const result = updateProductSchema.safeParse({
+            name: 'Valid Name',
+            invalidField: 'This should not be here',
+        })
+
+        expect(result.success).toBe(false)
     })
 })

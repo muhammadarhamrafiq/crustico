@@ -116,3 +116,90 @@ describe('POST /api/v1/product/add', () => {
         expect(res.body.data.slug).toBe('product-epsilon')
     })
 })
+
+describe('PATCH /api/v1/product/:id/update', () => {
+    it('should invalidate the empty request', async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product Alpha',
+                sku: 'ALPHA-001',
+                slug: 'product-alpha',
+                description: 'A product for testing',
+                basePrice: 100,
+            },
+        })
+        const response = await request(app).patch(`/api/v1/product/${product.id}/update`).send({})
+
+        expect(response.status).toBe(400)
+        expect(response.body.message).toBe('Should contain atleast one field to update')
+    })
+
+    it('should return correct response for the unique constraint failure', async () => {
+        await prisma.product.create({
+            data: {
+                name: 'Product Alpha',
+                description: 'Alpha Description',
+                sku: 'ALPH-001',
+                slug: 'product-alpha',
+                basePrice: 19.9,
+            },
+        })
+
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product Beta',
+                description: 'Beta Description',
+                sku: 'BETA-001',
+                slug: 'product-beta',
+                basePrice: 29.9,
+            },
+        })
+
+        const response = await request(app).patch(`/api/v1/product/${product.id}/update`).send({
+            name: 'Product Alpha',
+        })
+
+        expect(response.status).toBe(409)
+        expect(response.body.message).toBe('name already exist in Product')
+    })
+
+    it('should invalidate non-existent product update attempts', async () => {
+        const id = crypto.randomUUID()
+        const response = await request(app).patch(`/api/v1/product/${id}/update`).send({
+            name: 'Product Not Exit',
+        })
+
+        expect(response.status).toBe(404)
+        expect(response.body.message).toBe('Product not found')
+    })
+
+    it('should update product and return correctly formatted data', async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product Gamma',
+                description: 'Gamma Description',
+                sku: 'GAMMA-001',
+                slug: 'product-gamma',
+                basePrice: 39.9,
+            },
+        })
+
+        const updateData = {
+            name: 'Product Gamma Updated',
+            sku: 'GAMMA-002',
+            slug: 'product-gamma-updated',
+            basePrice: 49.9,
+        }
+
+        const response = await request(app)
+            .patch(`/api/v1/product/${product.id}/update`)
+            .send(updateData)
+
+        expect(response.status).toBe(200)
+        expect(response.body.data.id).toBe(product.id)
+        expect(response.body.data.name).toBe(updateData.name)
+        expect(response.body.data.sku).toBe(updateData.sku)
+        expect(response.body.data.slug).toBe(updateData.slug)
+        expect(response.body.data.basePrice).toBe('49.9')
+    })
+})

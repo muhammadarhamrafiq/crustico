@@ -99,5 +99,40 @@ export const ProductSchema = createProductSchema.extend({
     }),
 })
 
+export const updateProductSchema = createProductSchema
+    .partial()
+    .pick({
+        name: true,
+        slug: true,
+        sku: true,
+        basePrice: true,
+    })
+    .extend({
+        description: z.string().trim().optional(),
+    })
+    .strict()
+    .refine((data) => Object.keys(data).length > 0, {
+        error: 'Should contain atleast one field to update',
+    })
+    .openapi('updateProductSchema', {
+        title: 'UpdateProductInput',
+        description: 'Schema for updating an existing product data',
+    })
+
 export type createProductInput = z.infer<typeof createProductSchema>
+export type updateProductInput = z.infer<typeof updateProductSchema>
 export type Product = z.infer<typeof ProductSchema>
+
+// Response Schemas
+export const CreateProductResponseSchema = z.object({
+    status: z.number().openapi({ example: 201 }),
+    success: z.boolean().openapi({ example: true }),
+    message: z.string().openapi({ example: 'Product created successfully' }),
+    data: ProductSchema.omit({ categoryIds: true, variants: true }),
+})
+export const UpdateProductResponseSchema = z.object({
+    status: z.number().openapi({ example: 200 }),
+    success: z.boolean().openapi({ example: true }),
+    message: z.string().openapi({ example: 'Product updated successfully' }),
+    data: ProductSchema.omit({ categoryIds: true, variants: true }),
+})

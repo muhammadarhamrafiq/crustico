@@ -5,10 +5,14 @@ export async function resetDatabase() {
         DO $$ DECLARE
             r RECORD;
         BEGIN
-            -- truncate all tables in public schema (except Prisma migrations table if you want)
-        FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
-            EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' CASCADE;';
-        END LOOP;
+            FOR r IN (
+                SELECT tablename
+                FROM pg_tables
+                WHERE schemaname = 'public'
+                  AND tablename <> '_prisma_migrations'
+            ) LOOP
+                EXECUTE 'TRUNCATE TABLE ' || quote_ident(r.tablename) || ' RESTART IDENTITY CASCADE;';
+            END LOOP;
         END $$;
     `)
 }

@@ -56,7 +56,7 @@ describe('Create Product Service', () => {
         }
         try {
             await ProductService.createProduct(productData)
-            throw new Error('Expected error for duplicate name not thrown')
+            throw new Error('Expected error for duplicate slug not thrown')
         } catch (error) {
             expect(error).toBeInstanceOf(PrismaClientKnownRequestError)
             expect((error as PrismaClientKnownRequestError).code).toBe('P2002')
@@ -83,7 +83,7 @@ describe('Create Product Service', () => {
         }
         try {
             await ProductService.createProduct(productData)
-            throw new Error('Expected error for duplicate name not thrown')
+            throw new Error('Expected error for duplicate slug not thrown')
         } catch (error) {
             expect(error).toBeInstanceOf(PrismaClientKnownRequestError)
             expect((error as PrismaClientKnownRequestError).code).toBe('P2002')
@@ -149,5 +149,87 @@ describe('Create Product Service', () => {
         expect(createdProduct.slug).toBe(productData.slug)
         expect(createdProduct.variants).toHaveLength(2)
         expect(createdProduct.productCategories).toHaveLength(2)
+    })
+})
+
+describe('Update Product Service', () => {
+    it('should validate uniqueness on update', async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product A',
+                description: 'Description A',
+                basePrice: 100,
+                sku: 'PROD-A',
+                slug: 'product-a',
+            },
+        })
+
+        await prisma.product.create({
+            data: {
+                name: 'Product B',
+                description: 'Description B',
+                basePrice: 150,
+                sku: 'PROD-B',
+                slug: 'product-b',
+            },
+        })
+
+        try {
+            await ProductService.updateProduct(product.id, {
+                name: 'Product B',
+            })
+            throw new Error('Expected error for duplicate name not thrown')
+        } catch (error) {
+            expect(error).toBeInstanceOf(PrismaClientKnownRequestError)
+            expect((error as PrismaClientKnownRequestError).code).toBe('P2002')
+        }
+    })
+
+    it('should capable of partial updates', async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product X',
+                description: 'Product Description',
+                sku: 'PROD-X',
+                slug: 'product-x',
+                basePrice: 300,
+                image: 'uploads/tmp/random-uuid.jpg',
+            },
+        })
+
+        const updatedProduct = await ProductService.updateProduct(product.id, {
+            name: 'Product Y',
+        })
+
+        expect(updatedProduct.id).toBe(product.id)
+        expect(updatedProduct.name).toBe('Product Y')
+        expect(updatedProduct.image).toBe('uploads/tmp/random-uuid.jpg')
+    })
+
+    it('should update product successfully and return the updated product', async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product B',
+                description: 'Product Description',
+                sku: 'PRO-001-A',
+                slug: 'product-b',
+                basePrice: 190,
+                image: ' ',
+            },
+        })
+
+        const updatedProduct = await ProductService.updateProduct(product.id, {
+            name: 'Updated Product',
+            basePrice: 100,
+            description: 'Updated Description',
+            sku: 'UPD-001',
+            slug: 'updated-slug',
+        })
+
+        expect(updatedProduct.id).toBe(product.id)
+        expect(updatedProduct.name).toBe('Updated Product')
+        expect(updatedProduct.slug).toBe('updated-slug')
+        expect(updatedProduct.description).toBe('Updated Description')
+        expect(updatedProduct.sku).toBe('UPD-001')
     })
 })
