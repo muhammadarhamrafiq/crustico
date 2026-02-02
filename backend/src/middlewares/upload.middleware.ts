@@ -52,7 +52,7 @@ export const upload = multer({
 
 export const moveToPermanentStorage = asyncHandler(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { image } = req.body
+        const image = req.body.image || req.file?.path
         if (!image) return next()
 
         const temp = path.join(process.cwd(), image)

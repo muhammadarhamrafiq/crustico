@@ -7,6 +7,7 @@ interface UpdateProductData {
     slug?: string
     basePrice?: number
     description?: string
+    image?: string
 }
 
 class ProductRepo {
@@ -78,6 +79,13 @@ class ProductRepo {
     static async findBySlug(slug: string) {
         return await prisma.product.findUnique({
             where: { slug },
+        })
+    }
+    static async findById(id: string) {
+        return await prisma.product.findUnique({
+            where: {
+                id,
+            },
         })
     }
 }

@@ -27,3 +27,22 @@ export const updateProduct = asyncHandler(async (req: Request, res: Response) =>
         .status(200)
         .json(new ApiResponse(200, 'Product updated successfully', updatedProduct))
 })
+
+export const updateProductImage = asyncHandler(async (req: Request, res: Response) => {
+    const productId = req.params.id
+    const updatedProduct = await ProductService.updateProductImage(
+        productId as string,
+        req.body.image
+    )
+    return res
+        .status(200)
+        .json(new ApiResponse(200, 'Product image updated successfully', updatedProduct))
+})
+
+export const removeProductImage = asyncHandler(async (req: Request, res: Response) => {
+    const productId = req.params.id
+    const updatedProduct = await ProductService.removeProductImage(productId as string)
+    return res
+        .status(200)
+        .json(new ApiResponse(200, 'Product image removed successfully', updatedProduct))
+})

@@ -15,7 +15,6 @@ import {
 } from '../schemas/productValidation.schemas'
 
 const registerPaths = () => {
-    // Register the /product/upload-image endpoint
     registry.registerPath({
         method: 'post',
         path: '/product/upload-image',
@@ -176,6 +175,8 @@ const registerPaths = () => {
         method: 'patch',
         path: '/product/{id}/update',
         tags: ['Products'],
+        summary: 'Update an exiting product',
+        description: 'Update the product and returns the updated data',
         parameters: [
             {
                 name: 'id',
@@ -228,6 +229,189 @@ const registerPaths = () => {
                 content: {
                     'application/json': {
                         schema: ConflictErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.registerPath({
+        method: 'patch',
+        path: '/product/{id}/update-image',
+        tags: ['Products'],
+        summary: 'Upload product image for existing product',
+        description: 'Upload an image file and update the product image',
+        parameters: [
+            {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the product to update the image for',
+                },
+            },
+        ],
+        requestBody: {
+            content: {
+                'multipart/form-data': {
+                    schema: {
+                        type: 'object',
+                        properties: {
+                            image: {
+                                type: 'string',
+                                format: 'binary',
+                                description: 'Product image file (JPEG, PNG, GIF, WebP)',
+                            },
+                        },
+                    },
+                },
+            },
+            required: true,
+        },
+        responses: {
+            200: {
+                description: 'Image uploaded and product updated successfully',
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                status: {
+                                    type: 'number',
+                                    example: 200,
+                                },
+                                success: {
+                                    type: 'boolean',
+                                    example: true,
+                                },
+                                message: {
+                                    type: 'string',
+                                    example: 'Image updated successfully',
+                                },
+                                data: {
+                                    type: 'object',
+                                    properties: {
+                                        image: {
+                                            type: 'string',
+                                            example: 'image/12018231-412-42141.jpg',
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid file or no file uploaded',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            415: {
+                description: 'Unsupported file type',
+                content: {
+                    'application/json': {
+                        schema: UnsupportedMediaTypeErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Product not found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.registerPath({
+        method: 'delete',
+        path: '/product/{id}/remove-image',
+        tags: ['Products'],
+        summary: 'Delete product image for existing product',
+        description: 'Delete the product image associated with the specified product',
+        parameters: [
+            {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the product to delete the image for',
+                },
+            },
+        ],
+        responses: {
+            200: {
+                description: 'Image Removed Successfully',
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                status: {
+                                    type: 'number',
+                                    example: 200,
+                                },
+                                success: {
+                                    type: 'boolean',
+                                    example: true,
+                                },
+                                message: {
+                                    type: 'string',
+                                    example: 'Image updated successfully',
+                                },
+                                data: {
+                                    type: 'object',
+                                    properties: {
+                                        image: {
+                                            type: 'string',
+                                            example: 'image/12018231-412-42141.jpg',
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid id params',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Product not found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
                     },
                 },
             },
