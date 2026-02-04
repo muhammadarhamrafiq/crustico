@@ -33,6 +33,20 @@ class ProductService {
         if (product?.image) deleteFile(product?.image)
         return updatedProduct
     }
+
+    static async addCategoriesToProduct(id: string, categoryIds: string[]) {
+        const updatedProduct = await ProductRepo.addCategories(id, categoryIds)
+        return updatedProduct
+    }
+
+    static async removeCategoryFromProduct(id: string, categoryId: string) {
+        const product = await ProductRepo.findById(id)
+        if (!product) {
+            throw new ApiError(404, 'Product not found')
+        }
+        const updatedProduct = await ProductRepo.removeCategory(id, categoryId)
+        return updatedProduct
+    }
 }
 
 export default ProductService

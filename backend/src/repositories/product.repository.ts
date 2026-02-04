@@ -88,6 +88,50 @@ class ProductRepo {
             },
         })
     }
-}
 
+    static async addCategories(id: string, categoryIds: string[]) {
+        return await prisma.product.update({
+            where: { id },
+            data: {
+                productCategories: {
+                    createMany: {
+                        data: categoryIds.map((categoryId) => ({ categoryId })),
+                    },
+                },
+            },
+            include: {
+                productCategories: true,
+            },
+        })
+    }
+
+    static async removeCategory(id: string, categoryId: string) {
+        return await prisma.product.update({
+            where: { id },
+            data: {
+                productCategories: {
+                    delete: {
+                        category_product_pkey: {
+                            productId: id,
+                            categoryId: categoryId,
+                        },
+                    },
+                },
+            },
+            include: {
+                productCategories: true,
+            },
+        })
+    }
+    static async findByProductAndCategory(productId: string, categoryId: string) {
+        return await prisma.categoryProduct.findUnique({
+            where: {
+                category_product_pkey: {
+                    productId,
+                    categoryId,
+                },
+            },
+        })
+    }
+}
 export default ProductRepo

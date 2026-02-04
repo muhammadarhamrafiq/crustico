@@ -46,3 +46,23 @@ export const removeProductImage = asyncHandler(async (req: Request, res: Respons
         .status(200)
         .json(new ApiResponse(200, 'Product image removed successfully', updatedProduct))
 })
+
+export const addCategoriesToProduct = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params
+    const { categoryIds } = req.body
+    const updatedProduct = await ProductService.addCategoriesToProduct(id as string, categoryIds)
+    return res
+        .status(200)
+        .json(new ApiResponse(200, 'Categories added successfully', updatedProduct))
+})
+
+export const removeCategoryFromProduct = asyncHandler(async (req: Request, res: Response) => {
+    const { id, categoryId } = req.params
+    const updatedProduct = await ProductService.removeCategoryFromProduct(
+        id as string,
+        categoryId as string
+    )
+    return res
+        .status(200)
+        .json(new ApiResponse(200, 'Category removed successfully', updatedProduct))
+})

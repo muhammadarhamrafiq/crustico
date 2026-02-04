@@ -68,7 +68,6 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
 
 const handleZodError = (err: ZodError): ApiResponse => {
     const firstIssue = err.issues[0]
-
     if (firstIssue?.code === 'invalid_type') {
         return new ApiResponse(
             400,

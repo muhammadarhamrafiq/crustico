@@ -171,6 +171,10 @@ export const updateVariantSchema = z
         message: 'Should contain atleast one field to update',
     })
     .openapi('updateVariantSchema')
+export const removeCategoryFromProductSchema = z.object({
+    id: z.uuid('Product Id must be valid UUID'),
+    categoryId: z.uuid('Category Id must be valid UUID'),
+})
 
 export type addProductCategoriesSchemaInput = z.infer<typeof addProductCategoriesSchema>
 export type createProductInput = z.infer<typeof createProductSchema>

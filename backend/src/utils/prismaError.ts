@@ -16,6 +16,14 @@ export const handlePrismaError = (err: PrismaClientKnownRequestError): ApiRespon
             return handleUniqueConstraintError(err)
         case 'P2003':
             return handleInvalidReferenceError(err)
+        case 'P2017':
+            return new ApiResponse(
+                404,
+                'Relation not found',
+                process.env.NODE_ENV !== 'production'
+                    ? { mesage: err.message, stack: err.stack }
+                    : undefined
+            )
         case 'P2025':
             return handleRecordNotFoundError(err)
         default:

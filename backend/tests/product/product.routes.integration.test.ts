@@ -59,7 +59,7 @@ describe('POST /api/v1/product/add', () => {
             basePrice: 400,
             sku: 'GAMMA-001',
             slug: 'product-gamma',
-            categoryIds: ['non-existent-category-id'],
+            categoryIds: ['ba1d8479-e1b5-4944-87f8-c325f88d78cb'],
             image: '',
         }
 
@@ -201,5 +201,227 @@ describe('PATCH /api/v1/product/:id/update', () => {
         expect(response.body.data.sku).toBe(updateData.sku)
         expect(response.body.data.slug).toBe(updateData.slug)
         expect(response.body.data.basePrice).toBe('49.9')
+    })
+})
+
+describe('PATCH /api/v1/product/:id/add-categories', () => {
+    it('should return correct response for non-existent product', async () => {
+        const id = crypto.randomUUID()
+        const response = await request(app)
+            .patch(`/api/v1/product/${id}/add-categories`)
+            .send({
+                categoryIds: [crypto.randomUUID()],
+            })
+
+        expect(response.status).toBe(404)
+        expect(response.body.message).toBe('Product not found')
+    })
+
+    it('should return correct response for non-existent category', async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product Gamma',
+                description: 'Gamma Description',
+                slug: 'product-gamma',
+                sku: 'GAMMA-001',
+                basePrice: 39.9,
+            },
+        })
+
+        const response = await request(app)
+            .patch(`/api/v1/product/${product.id}/add-categories`)
+            .send({
+                categoryIds: [crypto.randomUUID()],
+            })
+
+        expect(response.status).toBe(422)
+        expect(response.body.message).toBe('Referenced category not found')
+    })
+
+    it('should add categories to product and return correctly formatted data', async () => {
+        const category1 = await prisma.category.create({
+            data: { name: 'Books', slug: 'books' },
+        })
+        const category2 = await prisma.category.create({
+            data: { name: 'Stationery', slug: 'stationery' },
+        })
+
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product Gamma',
+                description: 'Gamma Description',
+                slug: 'product-gamma',
+                sku: 'GAMMA-001',
+                basePrice: 39.9,
+            },
+        })
+
+        const response = await request(app)
+            .patch(`/api/v1/product/${product.id}/add-categories`)
+            .send({
+                categoryIds: [category1.id, category2.id],
+            })
+
+        expect(response.status).toBe(200)
+        expect(response.body.data?.productCategories).toHaveLength(2)
+    })
+})
+
+describe('DELETE /api/v1/product/:id/remove-category/:categoryId', () => {
+    it('should return correct response for non-existent product', async () => {
+        const id = crypto.randomUUID()
+        const categoryId = crypto.randomUUID()
+        const response = await request(app).delete(
+            `/api/v1/product/${id}/remove-category/${categoryId}`
+        )
+        expect(response.status).toBe(404)
+        expect(response.body.message).toBe('Product not found')
+    })
+
+    it('should return correct response for non-existent category association', async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product Gamma',
+                description: 'Gamma Description',
+                slug: 'product-gamma',
+                sku: 'GAMMA-001',
+                basePrice: 39.9,
+            },
+        })
+
+        const categoryId = crypto.randomUUID()
+        const response = await request(app).delete(
+            `/api/v1/product/${product.id}/remove-category/${categoryId}`
+        )
+        expect(response.status).toBe(404)
+        expect(response.body.message).toBe('Relation not found')
+    })
+
+    it('should remove category from product and return correctly formatted data', async () => {
+        const category = await prisma.category.create({
+            data: { name: 'Books', slug: 'books' },
+        })
+
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product Gamma',
+                description: 'Gamma Description',
+                slug: 'product-gamma',
+                sku: 'GAMMA-001',
+                basePrice: 39.9,
+                productCategories: {
+                    create: { categoryId: category.id },
+                },
+            },
+        })
+
+        const response = await request(app).delete(
+            `/api/v1/product/${product.id}/remove-category/${category.id}`
+        )
+
+        expect(response.status).toBe(200)
+        expect(response.body.data?.productCategories).toHaveLength(0)
+    })
+})
+
+describe('PATCH /api/v1/product/:id/add-variants', () => {
+    it('should return correct response of unique variant failure', async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product D',
+                sku: 'PRD-001',
+                slug: 'product-d',
+                basePrice: 19.99,
+                variants: {
+                    create: {
+                        label: 'L',
+                        description: 'Large size',
+                        priceModifier: '1.01',
+                    },
+                },
+            },
+        })
+
+        const res = await request(app)
+            .patch(`/api/v1/product/${product.id}/add-variants`)
+            .send({
+                variants: [
+                    { label: 's', description: 'Small', priceModifier: 0 },
+                    { label: 'l', description: 'Large', priceModifier: 0 },
+                ],
+            })
+
+        expect(res.status).toBe(409)
+        expect(res.body.message).toBe('Variant with this label already exits')
+    })
+
+    it('should invalidate the request with duplicate variants', async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product D',
+                sku: 'PRD-001',
+                slug: 'product-d',
+                basePrice: 19.99,
+                variants: {
+                    create: {
+                        label: 'L',
+                        description: 'Large size',
+                        priceModifier: '1.01',
+                    },
+                },
+            },
+        })
+
+        const res = await request(app)
+            .patch(`/api/v1/product/${product.id}/add-variants`)
+            .send({
+                variants: [
+                    { label: 'm', description: 'Medium', priceModifier: 10 },
+                    { label: 'm', description: 'Medium', priceModifier: 11 },
+                ],
+            })
+
+        expect(res.status).toBe(400)
+        expect(res.body.message).toBe('Variant labels must be unique')
+    })
+
+    it('should return correct response for invalid product id', async () => {
+        const uuid = crypto.randomUUID()
+        const res = await request(app)
+            .patch(`/api/v1/product/${uuid}/add-variants`)
+            .send({
+                variants: [
+                    { label: 'm', description: 'Medium', priceModifier: 10 },
+                    { label: 'm', description: 'Medium', priceModifier: 11 },
+                ],
+            })
+
+        expect(res.status).toBe(409)
+        expect(res.body.message).toBe('Product Not found')
+    })
+
+    it('should be able to create the variants for the product and return correct result.', async () => {
+        const product = await prisma.product.create({
+            data: {
+                name: 'Product D',
+                sku: 'PRD-002',
+                slug: 'product-d',
+                basePrice: 19.9,
+            },
+        })
+
+        const res = await request(app)
+            .patch(`/api/v1/product/${product.id}/add-variants`)
+            .send({
+                variants: [
+                    { label: 's', description: 'Small', priceModifier: 0 },
+                    { label: 'm', description: 'Medium', priceModifier: 12.5 },
+                    { label: 'l', description: 'Large', priceModifier: 20 },
+                ],
+            })
+
+        expect(res.status).toBe(200)
+        expect(res.body.id).toBe(product.id)
+        expect(res.body.variants).toHaveLength(2)
     })
 })
