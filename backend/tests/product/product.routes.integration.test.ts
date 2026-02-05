@@ -1,14 +1,24 @@
 import request from 'supertest'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { resetDatabase } from '../db'
 import app from '../../src/app'
 import prisma from '../../src/lib/prisma'
+import { Product, Category } from '../../src/generated/prisma/client'
+import { ProductGetPayload } from '../../src/generated/prisma/models'
 
-beforeEach(async () => {
+beforeAll(async () => {
     await resetDatabase()
 })
 
+afterAll(async () => {
+    await prisma.$disconnect()
+})
+
 describe('POST /api/v1/product/add', () => {
+    beforeAll(async () => {
+        await resetDatabase()
+    })
+
     it('should reject request with duplicate variant labels', async () => {
         const product = {
             name: 'Product Alpha',
@@ -118,45 +128,45 @@ describe('POST /api/v1/product/add', () => {
 })
 
 describe('PATCH /api/v1/product/:id/update', () => {
+    const products: Array<Product> = []
+    beforeAll(async () => {
+        await resetDatabase()
+        products.push(
+            await prisma.product.create({
+                data: {
+                    name: 'Product Alpha',
+                    description: 'Alpha Description',
+                    sku: 'ALPH-001',
+                    slug: 'product-alpha',
+                    basePrice: 19.9,
+                },
+            })
+        )
+        products.push(
+            await prisma.product.create({
+                data: {
+                    name: 'Product Beta',
+                    description: 'Beta Description',
+                    sku: 'BETA-001',
+                    slug: 'product-beta',
+                    basePrice: 29.9,
+                },
+            })
+        )
+    })
+
     it('should invalidate the empty request', async () => {
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product Alpha',
-                sku: 'ALPHA-001',
-                slug: 'product-alpha',
-                description: 'A product for testing',
-                basePrice: 100,
-            },
-        })
-        const response = await request(app).patch(`/api/v1/product/${product.id}/update`).send({})
+        const response = await request(app)
+            .patch(`/api/v1/product/${products[0].id}/update`)
+            .send({})
 
         expect(response.status).toBe(400)
         expect(response.body.message).toBe('Should contain atleast one field to update')
     })
 
     it('should return correct response for the unique constraint failure', async () => {
-        await prisma.product.create({
-            data: {
-                name: 'Product Alpha',
-                description: 'Alpha Description',
-                sku: 'ALPH-001',
-                slug: 'product-alpha',
-                basePrice: 19.9,
-            },
-        })
-
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product Beta',
-                description: 'Beta Description',
-                sku: 'BETA-001',
-                slug: 'product-beta',
-                basePrice: 29.9,
-            },
-        })
-
-        const response = await request(app).patch(`/api/v1/product/${product.id}/update`).send({
-            name: 'Product Alpha',
+        const response = await request(app).patch(`/api/v1/product/${products[0].id}/update`).send({
+            name: products[1].name,
         })
 
         expect(response.status).toBe(409)
@@ -174,16 +184,6 @@ describe('PATCH /api/v1/product/:id/update', () => {
     })
 
     it('should update product and return correctly formatted data', async () => {
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product Gamma',
-                description: 'Gamma Description',
-                sku: 'GAMMA-001',
-                slug: 'product-gamma',
-                basePrice: 39.9,
-            },
-        })
-
         const updateData = {
             name: 'Product Gamma Updated',
             sku: 'GAMMA-002',
@@ -192,19 +192,44 @@ describe('PATCH /api/v1/product/:id/update', () => {
         }
 
         const response = await request(app)
-            .patch(`/api/v1/product/${product.id}/update`)
+            .patch(`/api/v1/product/${products[1].id}/update`)
             .send(updateData)
 
         expect(response.status).toBe(200)
-        expect(response.body.data.id).toBe(product.id)
+        expect(response.body.data.id).toBe(products[1].id)
         expect(response.body.data.name).toBe(updateData.name)
         expect(response.body.data.sku).toBe(updateData.sku)
         expect(response.body.data.slug).toBe(updateData.slug)
-        expect(response.body.data.basePrice).toBe('49.9')
+        expect(response.body.data.basePrice).toBe(updateData.basePrice.toString())
     })
 })
 
 describe('PATCH /api/v1/product/:id/add-categories', () => {
+    let product: Product
+    const categories: Array<Category> = []
+    beforeAll(async () => {
+        await resetDatabase()
+        product = await prisma.product.create({
+            data: {
+                name: 'Product',
+                description: 'Product Description',
+                slug: 'product',
+                sku: 'TEST-CAT-001',
+                basePrice: 39.9,
+            },
+        })
+        categories.push(
+            await prisma.category.create({
+                data: { name: 'Pizzas', slug: 'pizzas' },
+            })
+        )
+        categories.push(
+            await prisma.category.create({
+                data: { name: 'Drinks', slug: 'drinks' },
+            })
+        )
+    })
+
     it('should return correct response for non-existent product', async () => {
         const id = crypto.randomUUID()
         const response = await request(app)
@@ -218,16 +243,6 @@ describe('PATCH /api/v1/product/:id/add-categories', () => {
     })
 
     it('should return correct response for non-existent category', async () => {
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product Gamma',
-                description: 'Gamma Description',
-                slug: 'product-gamma',
-                sku: 'GAMMA-001',
-                basePrice: 39.9,
-            },
-        })
-
         const response = await request(app)
             .patch(`/api/v1/product/${product.id}/add-categories`)
             .send({
@@ -239,27 +254,10 @@ describe('PATCH /api/v1/product/:id/add-categories', () => {
     })
 
     it('should add categories to product and return correctly formatted data', async () => {
-        const category1 = await prisma.category.create({
-            data: { name: 'Books', slug: 'books' },
-        })
-        const category2 = await prisma.category.create({
-            data: { name: 'Stationery', slug: 'stationery' },
-        })
-
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product Gamma',
-                description: 'Gamma Description',
-                slug: 'product-gamma',
-                sku: 'GAMMA-001',
-                basePrice: 39.9,
-            },
-        })
-
         const response = await request(app)
             .patch(`/api/v1/product/${product.id}/add-categories`)
             .send({
-                categoryIds: [category1.id, category2.id],
+                categoryIds: [categories[0].id, categories[1].id],
             })
 
         expect(response.status).toBe(200)
@@ -268,6 +266,28 @@ describe('PATCH /api/v1/product/:id/add-categories', () => {
 })
 
 describe('DELETE /api/v1/product/:id/remove-category/:categoryId', () => {
+    let product: Product, category: Category
+    beforeAll(async () => {
+        await resetDatabase()
+        category = await prisma.category.create({
+            data: { name: 'Desserts', slug: 'desserts' },
+        })
+        product = await prisma.product.create({
+            data: {
+                name: 'Product',
+                description: 'Product Description',
+                slug: 'product',
+                sku: 'TEST-REM-001',
+                basePrice: 39.9,
+                productCategories: {
+                    create: {
+                        categoryId: category.id,
+                    },
+                },
+            },
+        })
+    })
+
     it('should return correct response for non-existent product', async () => {
         const id = crypto.randomUUID()
         const categoryId = crypto.randomUUID()
@@ -279,16 +299,6 @@ describe('DELETE /api/v1/product/:id/remove-category/:categoryId', () => {
     })
 
     it('should return correct response for non-existent category association', async () => {
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product Gamma',
-                description: 'Gamma Description',
-                slug: 'product-gamma',
-                sku: 'GAMMA-001',
-                basePrice: 39.9,
-            },
-        })
-
         const categoryId = crypto.randomUUID()
         const response = await request(app).delete(
             `/api/v1/product/${product.id}/remove-category/${categoryId}`
@@ -298,23 +308,6 @@ describe('DELETE /api/v1/product/:id/remove-category/:categoryId', () => {
     })
 
     it('should remove category from product and return correctly formatted data', async () => {
-        const category = await prisma.category.create({
-            data: { name: 'Books', slug: 'books' },
-        })
-
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product Gamma',
-                description: 'Gamma Description',
-                slug: 'product-gamma',
-                sku: 'GAMMA-001',
-                basePrice: 39.9,
-                productCategories: {
-                    create: { categoryId: category.id },
-                },
-            },
-        })
-
         const response = await request(app).delete(
             `/api/v1/product/${product.id}/remove-category/${category.id}`
         )
@@ -325,13 +318,16 @@ describe('DELETE /api/v1/product/:id/remove-category/:categoryId', () => {
 })
 
 describe('PATCH /api/v1/product/:id/add-variant', () => {
-    it('should return correct response of unique variant failure', async () => {
-        const product = await prisma.product.create({
+    let product: Product
+    beforeAll(async () => {
+        await resetDatabase()
+        product = await prisma.product.create({
             data: {
-                name: 'Product D',
-                sku: 'PRD-001',
-                slug: 'product-d',
-                basePrice: 19.99,
+                name: 'Product',
+                description: 'Product Description',
+                slug: 'product',
+                sku: 'TEST-PRD-001',
+                basePrice: 39.9,
                 variants: {
                     create: {
                         label: 'l',
@@ -341,7 +337,9 @@ describe('PATCH /api/v1/product/:id/add-variant', () => {
                 },
             },
         })
+    })
 
+    it('should return correct response of unique variant failure', async () => {
         const res = await request(app)
             .patch(`/api/v1/product/${product.id}/add-variants`)
             .send({ label: 'l', description: 'Large', priceModifier: 0 })
@@ -361,26 +359,48 @@ describe('PATCH /api/v1/product/:id/add-variant', () => {
     })
 
     it('should be able to create the variants for the product and return correct result.', async () => {
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product D',
-                sku: 'PRD-002',
-                slug: 'product-d',
-                basePrice: 19.9,
-            },
-        })
-
         const res = await request(app)
             .patch(`/api/v1/product/${product.id}/add-variants`)
             .send({ label: 's', description: 'Small', priceModifier: 0 })
 
         expect(res.status).toBe(200)
         expect(res.body.data.id).toBe(product.id)
-        expect(res.body.data.variants).toHaveLength(1)
+        expect(res.body.data.variants).toHaveLength(2)
     })
 })
 
 describe('PATCH /api/v1/product/update-variant/:variantId', () => {
+    let product: ProductGetPayload<{
+        include: {
+            variants: true
+        }
+    }>
+    let variantId: string
+    beforeAll(async () => {
+        await resetDatabase()
+        product = await prisma.product.create({
+            data: {
+                name: 'Product',
+                description: 'Product Description',
+                slug: 'product',
+                sku: 'TEST-PRD-001',
+                basePrice: 39.9,
+                variants: {
+                    create: [
+                        { label: 'l', description: 'Large size', priceModifier: '10.1' },
+                        { label: 'm', description: 'Medium size', priceModifier: '5.1' },
+                        { label: 'c', description: 'To Update', priceModifier: '2.1' },
+                    ],
+                },
+            },
+            include: {
+                variants: true,
+            },
+        })
+
+        variantId = product.variants.find((v) => v.label === 'c')?.id as string
+    })
+
     it('should return correct response for non-existent variant', async () => {
         const variantId = crypto.randomUUID()
         const res = await request(app)
@@ -391,29 +411,8 @@ describe('PATCH /api/v1/product/update-variant/:variantId', () => {
     })
 
     it('should return correct response for unique variant label violation', async () => {
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product E',
-                sku: 'PRE-001',
-                slug: 'product-e',
-                basePrice: 29.9,
-                variants: {
-                    createMany: {
-                        data: [
-                            { label: 's', description: 'Small size', priceModifier: 0 },
-                            { label: 'm', description: 'Medium size', priceModifier: 10 },
-                        ],
-                    },
-                },
-            },
-        })
-
-        const variant = await prisma.variant.findFirstOrThrow({
-            where: { label: 's', productId: product.id },
-        })
-
         const res = await request(app)
-            .patch(`/api/v1/product/update-variant/${variant.id}`)
+            .patch(`/api/v1/product/update-variant/${variantId}`)
             .send({ label: 'm', description: 'Updated Medium', priceModifier: 12 })
 
         expect(res.status).toBe(409)
@@ -421,28 +420,12 @@ describe('PATCH /api/v1/product/update-variant/:variantId', () => {
     })
 
     it('should update variant and return correctly formatted data', async () => {
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product E',
-                sku: 'PRE-002',
-                slug: 'product-e',
-                basePrice: 29.9,
-                variants: {
-                    create: { label: 'l', description: 'Large size', priceModifier: 15 },
-                },
-            },
-        })
-
-        const variant = await prisma.variant.findFirstOrThrow({
-            where: { label: 'l', productId: product.id },
-        })
-
         const res = await request(app)
-            .patch(`/api/v1/product/update-variant/${variant.id}`)
+            .patch(`/api/v1/product/update-variant/${variantId}`)
             .send({ label: 'xl', description: 'Extra Large', priceModifier: 20 })
 
         expect(res.status).toBe(200)
-        expect(res.body.data.id).toBe(variant.id)
+        expect(res.body.data.id).toBe(variantId)
         expect(res.body.data.label).toBe('xl')
         expect(res.body.data.description).toBe('Extra Large')
         expect(res.body.data.priceModifier).toBe('20')
@@ -450,6 +433,69 @@ describe('PATCH /api/v1/product/update-variant/:variantId', () => {
 })
 
 describe('DELETE /api/v1/product/delete-variant/:variantId', () => {
+    let product: ProductGetPayload<{
+        include: {
+            variants: true
+        }
+    }>
+    let variantId1: string
+    let variantId2: string
+    beforeAll(async () => {
+        await resetDatabase()
+        product = await prisma.product.create({
+            data: {
+                name: 'Product',
+                description: 'Product Description',
+                slug: 'product',
+                sku: 'TEST-PRD-001',
+                basePrice: 39.9,
+                variants: {
+                    create: [
+                        { label: 'l', description: 'Large size', priceModifier: '10.1' },
+                        { label: 'm', description: 'Medium size', priceModifier: '5.1' },
+                        { label: 'c', description: 'To Update', priceModifier: '2.1' },
+                    ],
+                },
+            },
+            include: {
+                variants: true,
+            },
+        })
+
+        await prisma.deal.create({
+            data: {
+                name: 'Deal One',
+                slug: 'deal-one',
+                priceModifier: -10,
+                description: 'First Deal',
+                dealItems: {
+                    create: {
+                        productId: product.id,
+                        productVariantId: product.variants[0].id,
+                    },
+                },
+            },
+        })
+
+        await prisma.deal.create({
+            data: {
+                name: 'Deal Two',
+                slug: 'deal-two',
+                priceModifier: -5,
+                description: 'Second Deal',
+                dealItems: {
+                    create: {
+                        productId: product.id,
+                        productVariantId: product.variants[1].id,
+                    },
+                },
+            },
+        })
+
+        variantId1 = product.variants.find((v) => v.label === 'c')?.id as string
+        variantId2 = product.variants.find((v) => v.label === 'm')?.id as string
+    })
+
     it('should return correct response for non-existent variant', async () => {
         const variantId = crypto.randomUUID()
         const res = await request(app).delete(`/api/v1/product/delete-variant/${variantId}`)
@@ -459,53 +505,7 @@ describe('DELETE /api/v1/product/delete-variant/:variantId', () => {
     })
 
     it('should warn if deleting variant is used in deals', async () => {
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product F',
-                sku: 'PRF-001',
-                slug: 'product-f',
-                basePrice: 59.9,
-                variants: {
-                    create: { label: 'm', description: 'Medium size', priceModifier: 10 },
-                },
-            },
-        })
-
-        const variant = await prisma.variant.findFirstOrThrow({
-            where: { label: 'm', productId: product.id },
-        })
-
-        await prisma.deal.create({
-            data: {
-                name: 'Deal One',
-                description: 'First Deal',
-                priceModifier: -9,
-                slug: 'deal-one',
-                dealItems: {
-                    create: {
-                        productId: product.id,
-                        productVariantId: variant.id,
-                    },
-                },
-            },
-        })
-
-        await prisma.deal.create({
-            data: {
-                name: 'Deal Two',
-                description: 'Second Deal',
-                priceModifier: -15,
-                slug: 'deal-two',
-                dealItems: {
-                    create: {
-                        productId: product.id,
-                        productVariantId: variant.id,
-                    },
-                },
-            },
-        })
-
-        const res = await request(app).delete(`/api/v1/product/delete-variant/${variant.id}`)
+        const res = await request(app).delete(`/api/v1/product/delete-variant/${variantId1}`)
 
         expect(res.status).toBe(412)
         expect(res.body.message).toBe(
@@ -514,65 +514,277 @@ describe('DELETE /api/v1/product/delete-variant/:variantId', () => {
     })
 
     it('should delete variant if not used in deals', async () => {
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product F',
-                sku: 'PRF-002',
-                slug: 'product-f',
-                basePrice: 59.9,
-                variants: {
-                    create: { label: 's', description: 'Small size', priceModifier: 0 },
-                },
-            },
-        })
-
-        const variant = await prisma.variant.findFirstOrThrow({
-            where: { label: 's', productId: product.id },
-        })
-
-        const res = await request(app).delete(`/api/v1/product/delete-variant/${variant.id}`)
+        const res = await request(app).delete(`/api/v1/product/delete-variant/${variantId2}`)
 
         expect(res.status).toBe(200)
         expect(res.body.message).toBe('Variant deleted successfully')
     })
 
     it('should deactivate deal and variant when confirmed', async () => {
-        const product = await prisma.product.create({
-            data: {
-                name: 'Product G',
-                sku: 'PRG-001',
-                slug: 'product-g',
-                basePrice: 79.9,
-                variants: {
-                    create: { label: 'l', description: 'Large size', priceModifier: 15 },
-                },
-            },
-        })
+        const res = await request(app)
+            .delete(`/api/v1/product/delete-variant/${variantId1}`)
+            .query({ confirm: 'true' })
 
-        const variant = await prisma.variant.findFirstOrThrow({
-            where: { label: 'l', productId: product.id },
-        })
+        expect(res.status).toBe(200)
+        expect(res.body.message).toBe('Variant deleted successfully')
+    })
+})
 
-        await prisma.deal.create({
+describe('DELETE /api/v1/product/:id/delete', () => {
+    let product1: Product, product2: Product
+    beforeAll(async () => {
+        await resetDatabase()
+        product1 = await prisma.product.create({
             data: {
-                name: 'Deal Three',
-                description: 'Third Deal',
-                priceModifier: -20,
-                slug: 'deal-three',
-                dealItems: {
+                name: 'Product Alpha',
+                sku: 'PRD-ALP-001',
+                slug: 'product-alpha',
+                description: 'Alpha product description',
+                basePrice: 100,
+                productDeals: {
                     create: {
-                        productId: product.id,
-                        productVariantId: variant.id,
+                        deal: {
+                            create: {
+                                name: 'Deal Alpha',
+                                slug: 'deal-alpha',
+                                priceModifier: -10,
+                                description: 'Deal Alpha Description',
+                            },
+                        },
                     },
                 },
             },
         })
 
+        product2 = await prisma.product.create({
+            data: {
+                name: 'Product Beta',
+                sku: 'PRD-BET-001',
+                slug: 'product-beta',
+                description: 'Beta product description',
+                basePrice: 150,
+            },
+        })
+    })
+
+    it('should warn if deleting product is used in deals', async () => {
+        const res = await request(app).delete(`/api/v1/product/${product1.id}/delete`)
+
+        expect(res.status).toBe(412)
+        expect(res.body.message).toBe(
+            'Deletion not confirmed. All associated deals will also be deactivated.'
+        )
+    })
+
+    it('should delete product if not used in deals', async () => {
+        const res = await request(app).delete(`/api/v1/product/${product2.id}/delete`)
+
+        expect(res.status).toBe(200)
+        expect(res.body.message).toBe('Product deleted successfully')
+    })
+
+    it('should deactivate deal and product when confirmed', async () => {
         const res = await request(app)
-            .delete(`/api/v1/product/delete-variant/${variant.id}`)
+            .delete(`/api/v1/product/${product2.id}/delete`)
             .query({ confirm: 'true' })
 
         expect(res.status).toBe(200)
-        expect(res.body.message).toBe('Variant deleted successfully')
+        expect(res.body.message).toBe('Product deleted successfully')
+    })
+})
+
+describe('GET /api/v1/product/:id', () => {
+    let testProduct: Product
+
+    beforeAll(async () => {
+        await resetDatabase()
+
+        testProduct = await prisma.product.create({
+            data: {
+                name: 'Product J',
+                sku: 'PRJ-001',
+                slug: 'product-j',
+                description: 'Product J Description',
+                basePrice: 109.9,
+                image: ' ',
+                variants: {
+                    create: [
+                        { label: 's', description: 'Small size', priceModifier: 0 },
+                        { label: 'm', description: 'Medium size', priceModifier: 10 },
+                        { label: 'l', description: 'Large size', priceModifier: 15 },
+                    ],
+                },
+                productCategories: {
+                    create: {
+                        category: {
+                            create: { name: 'Category J', slug: 'category-j' },
+                        },
+                    },
+                },
+            },
+        })
+    })
+
+    it('should return correct response for non-existent product', async () => {
+        const id = crypto.randomUUID()
+        const res = await request(app).get(`/api/v1/product/${id}`)
+
+        expect(res.status).toBe(404)
+        expect(res.body.message).toBe('Product not found')
+    })
+
+    it('should return product with correctly formatted data', async () => {
+        const res = await request(app).get(`/api/v1/product/${testProduct.id}`)
+
+        expect(res.status).toBe(200)
+        expect(res.body.data.id).toBe(testProduct.id)
+        expect(res.body.data.name).toBe(testProduct.name)
+        expect(res.body.data.sku).toBe(testProduct.sku)
+        expect(res.body.data.slug).toBe(testProduct.slug)
+        expect(res.body.data.description).toBe(testProduct.description)
+        expect(res.body.data.basePrice).toBe('109.9')
+        expect(res.body.data.image).toBeNull()
+        expect(res.body.data.variants).toHaveLength(3)
+        expect(res.body.data.categories).toHaveLength(1)
+    })
+})
+
+describe('GET /api/v1/product', () => {
+    const categories: Array<Category> = []
+    beforeAll(async () => {
+        await resetDatabase()
+        categories.push(
+            await prisma.category.create({
+                data: { name: 'Pizzas', slug: 'pizzas' },
+            })
+        )
+        categories.push(
+            await prisma.category.create({
+                data: { name: 'Drinks', slug: 'drinks' },
+            })
+        )
+        categories.push(
+            await prisma.category.create({
+                data: { name: 'Burgers', slug: 'burgers' },
+            })
+        )
+
+        for (let i = 1; i <= 30; i++) {
+            await prisma.product.create({
+                data: {
+                    name: `Product ${i}`,
+                    description: `Description for product ${i}`,
+                    slug: `product-${i}`,
+                    sku: `PRD-${i.toString().padStart(3, '0')}`,
+                    basePrice: (i * 10).toString(),
+                    productCategories: {
+                        create: { categoryId: categories[i % 3].id },
+                    },
+                },
+            })
+        }
+    })
+
+    it('should return paginated products with default limit', async () => {
+        const res = await request(app).get('/api/v1/product?page=1&limit=10')
+
+        expect(res.status).toBe(200)
+        expect(res.body.products).toHaveLength(10)
+        expect(res.body.pagination).toBeDefined()
+        expect(res.body.pagination.total).toBe(30)
+        expect(res.body.pagination.page).toBe(1)
+        expect(res.body.pagination.pages).toBe(3)
+    })
+
+    it('should return second page correctly', async () => {
+        const res = await request(app).get('/api/v1/product?page=2&limit=10')
+
+        expect(res.status).toBe(200)
+        expect(res.body.products).toHaveLength(10)
+        expect(res.body.pagination.page).toBe(2)
+        expect(res.body.pagination.total).toBe(30)
+    })
+
+    it('should return last page with remaining products', async () => {
+        const res = await request(app).get('/api/v1/product?page=3&limit=10')
+
+        expect(res.status).toBe(200)
+        expect(res.body.products).toHaveLength(10)
+        expect(res.body.pagination.page).toBe(3)
+    })
+
+    it('should filter products by category', async () => {
+        const res = await request(app).get(`/api/v1/product?category=${categories[0].id}`)
+
+        expect(res.status).toBe(200)
+        expect(res.body.products.length).toBe(10)
+        expect(
+            res.body.products.every((p: any) =>
+                p.categories?.some((c: any) => c.name === categories[0].name)
+            )
+        ).toBe(true)
+    })
+
+    it('should search products by name', async () => {
+        const res = await request(app).get('/api/v1/product?search=Product 1')
+
+        expect(res.status).toBe(200)
+        expect(res.body.products.length).toBeGreaterThan(0)
+        expect(res.body.products.every((p: any) => p.name.includes('Product 1'))).toBe(true)
+    })
+
+    it('should combine search and category filter', async () => {
+        const res = await request(app).get(
+            `/api/v1/product?search=Product&category=${categories[1].name}`
+        )
+
+        expect(res.status).toBe(200)
+        expect(
+            res.body.products.every((p: any) => {
+                return (
+                    p.name.includes('Product') &&
+                    p.categories?.some((c: any) => c.name === categories[1].name)
+                )
+            })
+        ).toBe(true)
+    })
+
+    it('should handle custom page limit', async () => {
+        const res = await request(app).get('/api/v1/product?page=1&limit=5')
+
+        expect(res.status).toBe(200)
+        expect(res.body.products).toHaveLength(5)
+        expect(res.body.pagination.limit).toBe(5)
+        expect(res.body.pagination.pages).toBe(6)
+    })
+
+    it('should return empty array for page beyond available data', async () => {
+        const res = await request(app).get('/api/v1/product?page=100&limit=10')
+
+        expect(res.status).toBe(200)
+        expect(res.body.products).toHaveLength(0)
+        expect(res.body.pagination.total).toBe(30)
+        expect(res.body.pagination.page).toBe(100)
+    })
+
+    it('should return empty array when searching for non-existent products', async () => {
+        const res = await request(app).get('/api/v1/product?search=NonExistentProduct123')
+
+        expect(res.status).toBe(200)
+        expect(res.body.products).toHaveLength(0)
+    })
+
+    it('should handle pagination with category filter', async () => {
+        const res = await request(app).get(
+            `/api/v1/product?category=${categories[2].name}&page=1&limit=5`
+        )
+
+        expect(res.status).toBe(200)
+        expect(res.body.products).toHaveLength(5)
+        expect(
+            res.body.products.every((p: any) =>
+                p.categories?.some((c: any) => c.name === categories[2].name)
+            )
+        ).toBe(true)
     })
 })
