@@ -10,6 +10,9 @@ import {
     addProductVariants,
     updateVariant,
     deleteVariant,
+    deleteProduct,
+    getProductById,
+    getProducts,
 } from '../controllers/product.controller'
 import { validator } from '../middlewares/validator.middleware'
 import {
@@ -69,4 +72,7 @@ router.patch(
 
 router.delete('/delete-variant/:id', validator(idParamsSchema, 'params'), deleteVariant)
 
+router.delete('/:id/delete', validator(idParamsSchema, 'params'), deleteProduct)
+router.get('/:id', validator(idParamsSchema, 'params'), getProductById)
+router.get('/', getProducts)
 export default router

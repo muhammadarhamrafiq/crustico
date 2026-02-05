@@ -1,3 +1,4 @@
+import { ProductWhereInput } from '../generated/prisma/models'
 import prisma from '../lib/prisma'
 import type {
     addProductVariantsInput,
@@ -89,6 +90,23 @@ class ProductRepo {
             where: {
                 id,
             },
+            include: {
+                variants: {
+                    where: {
+                        deletedAt: null,
+                    },
+                },
+                productCategories: {
+                    where: {
+                        category: {
+                            deletedAt: null,
+                        },
+                    },
+                    include: {
+                        category: true,
+                    },
+                },
+            },
         })
     }
 
@@ -159,6 +177,72 @@ class ProductRepo {
             },
             include: {
                 variants: true,
+            },
+        })
+    }
+
+    static async deleteProduct(id: string) {
+        return await prisma.$transaction(async (tx) => {
+            const date = new Date()
+            await tx.variant.updateMany({
+                where: { productId: id },
+                data: { deletedAt: date },
+            })
+            await tx.deal.updateMany({
+                where: {
+                    dealItems: {
+                        some: {
+                            productId: id,
+                        },
+                    },
+                },
+                data: { deletedAt: date },
+            })
+            return await tx.product.update({
+                where: { id },
+                data: {
+                    deletedAt: date,
+                },
+            })
+        })
+    }
+
+    static async findAll(where: ProductWhereInput, page: number, limit: number) {
+        return await prisma.product.findMany({
+            where: {
+                ...where,
+                deletedAt: null,
+            },
+            orderBy: {
+                createdAt: 'desc',
+            },
+            include: {
+                variants: {
+                    where: {
+                        deletedAt: null,
+                    },
+                },
+                productCategories: {
+                    where: {
+                        category: {
+                            deletedAt: null,
+                        },
+                    },
+                    include: {
+                        category: true,
+                    },
+                },
+            },
+            skip: (page - 1) * limit,
+            take: limit,
+        })
+    }
+
+    static async countAll(where: ProductWhereInput) {
+        return await prisma.product.count({
+            where: {
+                ...where,
+                deletedAt: null,
             },
         })
     }

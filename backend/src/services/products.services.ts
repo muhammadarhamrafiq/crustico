@@ -7,9 +7,10 @@ import type {
     updateProductInput,
     updateVariantInput,
 } from '../schemas/productValidation.schemas'
-import { removeUndefined } from '../utils/removeUndefined'
+import { removeUndefined, formatProduct } from '../utils/common'
 import { deleteFile } from '../utils/deleteFile'
 import { ApiError } from '../utils/apiError'
+import { ProductWhereInput } from '../generated/prisma/models'
 
 class ProductService {
     static async createProduct(productData: createProductInput) {
@@ -84,8 +85,8 @@ class ProductService {
     }
 
     static async deleteVariant(id: string, confirm: boolean) {
-        const deals = await DealsRepo.findByVariantId(id)
-        if (deals.length > 0 && !confirm) {
+        const deals = await DealsRepo.countDealsWithVariant(id)
+        if (deals > 0 && !confirm) {
             throw new ApiError(
                 412,
                 'Deletion not confirmed. All associated deals will also be deactivated.'
@@ -93,6 +94,60 @@ class ProductService {
         }
         const deletedVaraint = await VariantRepo.deleteVariant(id)
         return deletedVaraint
+    }
+
+    static async deleteProduct(id: string, confirm: boolean) {
+        const deals = await DealsRepo.countDealsWithProduct(id)
+        if (deals > 0 && !confirm) {
+            throw new ApiError(
+                412,
+                'Deletion not confirmed. All associated deals will also be deactivated.'
+            )
+        }
+        const deletedProduct = await ProductRepo.deleteProduct(id)
+        return deletedProduct
+    }
+
+    static async getProductById(id: string) {
+        const product = await ProductRepo.findById(id)
+        if (!product) {
+            throw new ApiError(404, 'Product not found')
+        }
+
+        const formattedProduct = formatProduct(product)
+        return formattedProduct
+    }
+
+    static async getProducts(categoryId: string, search: string, page: number, limit: number) {
+        const where: ProductWhereInput = {}
+        if (categoryId) {
+            where.productCategories = {
+                some: {
+                    categoryId: categoryId,
+                },
+            }
+        }
+        if (search) {
+            where.OR = [
+                { name: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } },
+                { sku: { contains: search, mode: 'insensitive' } },
+                { slug: { contains: search, mode: 'insensitive' } },
+            ]
+        }
+        const products = await ProductRepo.findAll(where, page, limit)
+        const totalProduct = await ProductRepo.countAll(where)
+        const formattedProducts = products.map(formatProduct)
+
+        return {
+            products: formattedProducts,
+            pagination: {
+                page,
+                limit,
+                total: totalProduct,
+                pages: Math.ceil(totalProduct / limit),
+            },
+        }
     }
 }
 

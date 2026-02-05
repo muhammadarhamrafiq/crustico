@@ -87,3 +87,27 @@ export const deleteVariant = asyncHandler(async (req: Request, res: Response) =>
     const result = await ProductService.deleteVariant(id as string, confirm)
     return res.status(200).json(new ApiResponse(200, 'Variant deleted successfully', result))
 })
+
+export const deleteProduct = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id
+    const confirm = req.query.confirm === 'true'
+    const result = await ProductService.deleteProduct(id as string, confirm)
+    return res.status(200).json(new ApiResponse(200, 'Product deleted successfully', result))
+})
+
+export const getProductById = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id
+    const product = await ProductService.getProductById(id as string)
+    return res.status(200).json(new ApiResponse(200, 'Product retrieved successfully', product))
+})
+
+export const getProducts = asyncHandler(async (req: Request, res: Response) => {
+    const { category, search, page = '1', limit = '10' } = req.query
+    const result = await ProductService.getProducts(
+        category as string,
+        search as string,
+        parseInt(page as string),
+        parseInt(limit as string)
+    )
+    return res.status(200).json(new ApiResponse(200, 'Products retrieved successfully', result))
+})

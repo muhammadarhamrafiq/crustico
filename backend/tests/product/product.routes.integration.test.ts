@@ -689,37 +689,37 @@ describe('GET /api/v1/product', () => {
         const res = await request(app).get('/api/v1/product?page=1&limit=10')
 
         expect(res.status).toBe(200)
-        expect(res.body.products).toHaveLength(10)
-        expect(res.body.pagination).toBeDefined()
-        expect(res.body.pagination.total).toBe(30)
-        expect(res.body.pagination.page).toBe(1)
-        expect(res.body.pagination.pages).toBe(3)
+        expect(res.body.data.products).toHaveLength(10)
+        expect(res.body.data.pagination).toBeDefined()
+        expect(res.body.data.pagination.total).toBe(30)
+        expect(res.body.data.pagination.page).toBe(1)
+        expect(res.body.data.pagination.pages).toBe(3)
     })
 
     it('should return second page correctly', async () => {
         const res = await request(app).get('/api/v1/product?page=2&limit=10')
 
         expect(res.status).toBe(200)
-        expect(res.body.products).toHaveLength(10)
-        expect(res.body.pagination.page).toBe(2)
-        expect(res.body.pagination.total).toBe(30)
+        expect(res.body.data.products).toHaveLength(10)
+        expect(res.body.data.pagination.page).toBe(2)
+        expect(res.body.data.pagination.total).toBe(30)
     })
 
     it('should return last page with remaining products', async () => {
         const res = await request(app).get('/api/v1/product?page=3&limit=10')
 
         expect(res.status).toBe(200)
-        expect(res.body.products).toHaveLength(10)
-        expect(res.body.pagination.page).toBe(3)
+        expect(res.body.data.products).toHaveLength(10)
+        expect(res.body.data.pagination.page).toBe(3)
     })
 
     it('should filter products by category', async () => {
         const res = await request(app).get(`/api/v1/product?category=${categories[0].id}`)
 
         expect(res.status).toBe(200)
-        expect(res.body.products.length).toBe(10)
+        expect(res.body.data.products.length).toBe(10)
         expect(
-            res.body.products.every((p: any) =>
+            res.body.data.products.every((p: any) =>
                 p.categories?.some((c: any) => c.name === categories[0].name)
             )
         ).toBe(true)
@@ -729,8 +729,8 @@ describe('GET /api/v1/product', () => {
         const res = await request(app).get('/api/v1/product?search=Product 1')
 
         expect(res.status).toBe(200)
-        expect(res.body.products.length).toBeGreaterThan(0)
-        expect(res.body.products.every((p: any) => p.name.includes('Product 1'))).toBe(true)
+        expect(res.body.data.products.length).toBeGreaterThan(0)
+        expect(res.body.data.products.every((p: any) => p.name.includes('Product 1'))).toBe(true)
     })
 
     it('should combine search and category filter', async () => {
@@ -740,7 +740,7 @@ describe('GET /api/v1/product', () => {
 
         expect(res.status).toBe(200)
         expect(
-            res.body.products.every((p: any) => {
+            res.body.data.products.every((p: any) => {
                 return (
                     p.name.includes('Product') &&
                     p.categories?.some((c: any) => c.name === categories[1].name)
@@ -753,36 +753,36 @@ describe('GET /api/v1/product', () => {
         const res = await request(app).get('/api/v1/product?page=1&limit=5')
 
         expect(res.status).toBe(200)
-        expect(res.body.products).toHaveLength(5)
-        expect(res.body.pagination.limit).toBe(5)
-        expect(res.body.pagination.pages).toBe(6)
+        expect(res.body.data.products).toHaveLength(5)
+        expect(res.body.data.pagination.limit).toBe(5)
+        expect(res.body.data.pagination.pages).toBe(6)
     })
 
     it('should return empty array for page beyond available data', async () => {
         const res = await request(app).get('/api/v1/product?page=100&limit=10')
 
         expect(res.status).toBe(200)
-        expect(res.body.products).toHaveLength(0)
-        expect(res.body.pagination.total).toBe(30)
-        expect(res.body.pagination.page).toBe(100)
+        expect(res.body.data.products).toHaveLength(0)
+        expect(res.body.data.pagination.total).toBe(30)
+        expect(res.body.data.pagination.page).toBe(100)
     })
 
     it('should return empty array when searching for non-existent products', async () => {
         const res = await request(app).get('/api/v1/product?search=NonExistentProduct123')
 
         expect(res.status).toBe(200)
-        expect(res.body.products).toHaveLength(0)
+        expect(res.body.data.products).toHaveLength(0)
     })
 
     it('should handle pagination with category filter', async () => {
         const res = await request(app).get(
-            `/api/v1/product?category=${categories[2].name}&page=1&limit=5`
+            `/api/v1/product?category=${categories[2].id}&page=1&limit=5`
         )
 
         expect(res.status).toBe(200)
-        expect(res.body.products).toHaveLength(5)
+        expect(res.body.data.products).toHaveLength(5)
         expect(
-            res.body.products.every((p: any) =>
+            res.body.data.products.every((p: any) =>
                 p.categories?.some((c: any) => c.name === categories[2].name)
             )
         ).toBe(true)
