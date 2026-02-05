@@ -39,6 +39,10 @@ model Variant {
   product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   productDeals DealItem[]
 
+  createAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime?  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
   @@unique([productId, label])
   @@index([productId])
   @@map("variants")
@@ -101,7 +105,7 @@ model DealItem {
 
   deal           Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
   product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productVariant Variant? @relation(fields: [productVariantId], references: [id], onDelete: SetNull)
+  productVariant Variant? @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
 
   @@unique([dealId, productId, productVariantId], name: "unique_deal_item")
   @@index([dealId])

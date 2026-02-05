@@ -3,7 +3,7 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
 
 extendZodWithOpenApi(z)
 
-const productVariantSchema = z.object({
+export const productVariantSchema = z.object({
     label: z.string().trim().min(1, 'Variant label must contain at least 1 character'),
     priceModifier: z.number().nonnegative('priceModifier of variant must be non-negative'),
     description: z.string().trim().optional().default('No Description.'),
@@ -131,29 +131,6 @@ export const addProductCategoriesSchema = z
     })
     .openapi('addProductCategoriesSchema')
 
-export const addProductVariantsSchema = z
-    .object({
-        variants: z
-            .array(productVariantSchema)
-            .refine((variants) => uniqueBy(variants, (v) => v.label), {
-                message: 'Variant labels must be unique',
-            })
-            .refine((variants) => variants.length > 0, {
-                message: 'variants array must contain at least one variant',
-            })
-            .openapi({
-                description: 'Array of product variants to add',
-                example: [
-                    {
-                        label: 'Medium Size',
-                        priceModifier: 3.0,
-                        description: 'Medium size with standard toppings',
-                    },
-                ],
-            }),
-    })
-    .openapi('addProductVariantsSchema')
-
 export const updateVariantSchema = z
     .object({
         label: z
@@ -180,6 +157,8 @@ export type addProductCategoriesSchemaInput = z.infer<typeof addProductCategorie
 export type createProductInput = z.infer<typeof createProductSchema>
 export type updateProductInput = z.infer<typeof updateProductSchema>
 export type Product = z.infer<typeof productSchema>
+export type addProductVariantsInput = z.infer<typeof productVariantSchema>
+export type updateVariantInput = z.infer<typeof updateVariantSchema>
 
 // Response Schemas
 export const CreateProductResponseSchema = z.object({

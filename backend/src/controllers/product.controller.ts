@@ -66,3 +66,24 @@ export const removeCategoryFromProduct = asyncHandler(async (req: Request, res: 
         .status(200)
         .json(new ApiResponse(200, 'Category removed successfully', updatedProduct))
 })
+
+export const addProductVariants = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id
+    const updatedProduct = await ProductService.addProductVariants(id as string, req.body)
+    return res.status(200).json(new ApiResponse(200, 'Variants added successfully', updatedProduct))
+})
+
+export const updateVariant = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id
+    const updatedVariant = await ProductService.updateVariant(id as string, req.body)
+    return res
+        .status(200)
+        .json(new ApiResponse(200, 'Variant updated successfully', updatedVariant))
+})
+
+export const deleteVariant = asyncHandler(async (req: Request, res: Response) => {
+    const id = req.params.id
+    const confirm = req.query.confirm === 'true'
+    const result = await ProductService.deleteVariant(id as string, confirm)
+    return res.status(200).json(new ApiResponse(200, 'Variant deleted successfully', result))
+})

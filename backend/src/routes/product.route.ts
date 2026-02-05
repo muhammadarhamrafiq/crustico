@@ -7,6 +7,9 @@ import {
     removeProductImage,
     addCategoriesToProduct,
     removeCategoryFromProduct,
+    addProductVariants,
+    updateVariant,
+    deleteVariant,
 } from '../controllers/product.controller'
 import { validator } from '../middlewares/validator.middleware'
 import {
@@ -14,6 +17,8 @@ import {
     createProductSchema,
     updateProductSchema,
     removeCategoryFromProductSchema,
+    productVariantSchema,
+    updateVariantSchema,
 } from '../schemas/productValidation.schemas'
 import { upload, moveToPermanentStorage } from '../middlewares/upload.middleware'
 import { idParamsSchema } from '../schemas/commons.schema'
@@ -27,6 +32,7 @@ router.patch(
     validator(updateProductSchema),
     updateProduct
 )
+
 router.patch(
     '/:id/update-image',
     upload.single('image'),
@@ -47,5 +53,20 @@ router.delete(
     validator(removeCategoryFromProductSchema, 'params'),
     removeCategoryFromProduct
 )
+
+router.patch(
+    '/:id/add-variants',
+    validator(idParamsSchema, 'params'),
+    validator(productVariantSchema),
+    addProductVariants
+)
+router.patch(
+    '/update-variant/:id',
+    validator(updateVariantSchema),
+    validator(idParamsSchema, 'params'),
+    updateVariant
+)
+
+router.delete('/delete-variant/:id', validator(idParamsSchema, 'params'), deleteVariant)
 
 export default router

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import {
     createProductSchema,
     addProductCategoriesSchema,
-    addProductVariantsSchema,
+    productVariantSchema,
     updateProductSchema,
     updateVariantSchema,
 } from '../../src/schemas/productValidation.schemas'
@@ -188,37 +188,17 @@ describe('Add Product Categories Schema', () => {
 
 describe('Add Product Variants Schema', () => {
     it('should invalid empty variants array', () => {
-        const result = addProductVariantsSchema.safeParse({ variants: [] })
-        expect(result.success).toBe(false)
-    })
-
-    it('should invalidate variants with duplicate labels', () => {
-        const result = addProductVariantsSchema.safeParse({
-            variants: [
-                { label: 'Size M', priceModifier: 5 },
-                { label: 'Size M', priceModifier: 10 },
-            ],
-        })
+        const result = productVariantSchema.safeParse({})
         expect(result.success).toBe(false)
     })
 
     it('should invalidate variants with negative priceModifier', () => {
-        const result = addProductVariantsSchema.safeParse({
-            variants: [
-                { label: 'Size M', priceModifier: -5 },
-                { label: 'Size L', priceModifier: 10 },
-            ],
-        })
+        const result = productVariantSchema.safeParse({ label: 'Size M', priceModifier: -5 })
         expect(result.success).toBe(false)
     })
 
     it('should validate correct variants input', () => {
-        const result = addProductVariantsSchema.safeParse({
-            variants: [
-                { label: 'Size M', priceModifier: 5 },
-                { label: 'Size L', priceModifier: 10 },
-            ],
-        })
+        const result = productVariantSchema.safeParse({ label: 'Size M', priceModifier: 5 })
         expect(result.success).toBe(true)
     })
 })

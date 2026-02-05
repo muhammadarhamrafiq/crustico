@@ -10,6 +10,7 @@ import {
 import {
     CreateProductResponseSchema,
     createProductSchema,
+    productVariantSchema,
     UpdateProductResponseSchema,
     updateProductSchema,
 } from '../schemas/productValidation.schemas'
@@ -409,6 +410,352 @@ const registerPaths = () => {
             },
             404: {
                 description: 'Product not found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.registerPath({
+        method: 'patch',
+        path: '/product/{id}/add-categories',
+        tags: ['Products'],
+        summary: 'Add categories to a product',
+        description: 'Associate one or more categories with the specified product',
+        parameters: [
+            {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the product to add categories to',
+                },
+            },
+        ],
+        requestBody: {
+            description: 'Categories to add to the product',
+            content: {
+                'application/json': {
+                    schema: {
+                        type: 'object',
+                        properties: {
+                            categoryIds: {
+                                type: 'array',
+                                items: {
+                                    type: 'string',
+                                    format: 'uuid',
+                                    description:
+                                        'UUID of the category to associate with the product',
+                                },
+                                example: [
+                                    '550e8400-e29b-41d4-a716-446655440000',
+                                    '550e8400-e29b-41d4-a716-446655440001',
+                                ],
+                            },
+                        },
+                    },
+                },
+            },
+            required: true,
+        },
+        responses: {
+            200: {
+                description: 'Categories added successfully',
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                status: {
+                                    type: 'number',
+                                    example: 200,
+                                },
+                                success: {
+                                    type: 'boolean',
+                                    example: true,
+                                },
+                                message: {
+                                    type: 'string',
+                                    example: 'Categories added to product successfully',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid input data',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Product not found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
+                    },
+                },
+            },
+            422: {
+                description: 'Invalid Category Reference',
+                content: {
+                    'application/json': {
+                        schema: UnprocessableEntityErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.registerPath({
+        method: 'delete',
+        path: '/product/{id}/remove-category/{categoryId}',
+        tags: ['Products'],
+        summary: 'Remove category from a product',
+        description: 'Dissociate a category from the specified product',
+        parameters: [
+            {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the product to remove category from',
+                },
+            },
+            {
+                name: 'categoryId',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the category to dissociate from the product',
+                },
+            },
+        ],
+        responses: {
+            200: {
+                description: 'Category removed successfully',
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                status: {
+                                    type: 'number',
+                                    example: 200,
+                                },
+                                success: {
+                                    type: 'boolean',
+                                    example: true,
+                                },
+                                message: {
+                                    type: 'string',
+                                    example: 'Category removed from product successfully',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid input data',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Product or Category or their relation not found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.register('productVariantSchema', productVariantSchema)
+    registry.registerPath({
+        path: '/product/{id}/add-variants',
+        method: 'patch',
+        tags: ['Products'],
+        summary: 'Add variants to a product',
+        description: 'Add one or more variants to the specified product',
+        parameters: [
+            {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the product to add variants to',
+                },
+            },
+        ],
+        requestBody: {
+            description: 'Variants to add to the product',
+            content: {
+                'application/json': {
+                    schema: {
+                        $ref: '#/components/schemas/productVariantSchema',
+                    },
+                },
+            },
+            required: true,
+        },
+        responses: {
+            200: {
+                description: 'Variants added successfully',
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                status: {
+                                    type: 'number',
+                                    example: 200,
+                                },
+                                success: {
+                                    type: 'boolean',
+                                    example: true,
+                                },
+                                message: {
+                                    type: 'string',
+                                    example: 'Variants added to product successfully',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid input data',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Product not found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+    registry.registerPath({
+        method: 'patch',
+        path: '/product/update-variant/{id}',
+        tags: ['Products'],
+        summary: 'Update an existing product variant',
+        description: 'Update the details of a specific product variant',
+        parameters: [
+            {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the product variant to update',
+                },
+            },
+        ],
+        requestBody: {
+            description: 'Product variant update payload',
+            content: {
+                'application/json': {
+                    schema: {
+                        $ref: '#/components/schemas/productVariantSchema',
+                    },
+                },
+            },
+            required: true,
+        },
+        responses: {
+            200: {
+                description: 'Product variant updated successfully',
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                status: {
+                                    type: 'number',
+                                    example: 200,
+                                },
+                                success: {
+                                    type: 'boolean',
+                                    example: true,
+                                },
+                                message: {
+                                    type: 'string',
+                                    example: 'Product variant updated successfully',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid input data',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Product variant not found',
                 content: {
                     'application/json': {
                         schema: NotFoundErrorSchema,

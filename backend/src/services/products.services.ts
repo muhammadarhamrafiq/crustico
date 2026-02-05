@@ -1,5 +1,12 @@
 import ProductRepo from '../repositories/product.repository'
-import type { createProductInput, updateProductInput } from '../schemas/productValidation.schemas'
+import VariantRepo from '../repositories/variant.repository'
+import DealsRepo from '../repositories/deals.repository'
+import type {
+    addProductVariantsInput,
+    createProductInput,
+    updateProductInput,
+    updateVariantInput,
+} from '../schemas/productValidation.schemas'
 import { removeUndefined } from '../utils/removeUndefined'
 import { deleteFile } from '../utils/deleteFile'
 import { ApiError } from '../utils/apiError'
@@ -46,6 +53,46 @@ class ProductService {
         }
         const updatedProduct = await ProductRepo.removeCategory(id, categoryId)
         return updatedProduct
+    }
+
+    static async addProductVariants(id: string, variant: addProductVariantsInput) {
+        const exitingVariant = await ProductRepo.findVariantByLabel(id, variant.label)
+        if (exitingVariant) {
+            throw new ApiError(409, 'Variant with this label already exits')
+        }
+        const updatedProduct = await ProductRepo.addVariants(id, variant)
+        return updatedProduct
+    }
+
+    static async updateVariant(id: string, variantData: updateVariantInput) {
+        const cleaned = removeUndefined(variantData)
+        if (cleaned.label) {
+            const existingVariant = await VariantRepo.findById(id)
+            if (!existingVariant) {
+                throw new ApiError(404, 'Variant not found')
+            }
+            const variantWithSameLabel = await ProductRepo.findVariantByLabel(
+                existingVariant.productId,
+                cleaned.label
+            )
+            if (variantWithSameLabel && variantWithSameLabel.id !== id) {
+                throw new ApiError(409, 'Variant with this label already exists')
+            }
+        }
+        const updatedVariant = await VariantRepo.updateVariant(id, cleaned)
+        return updatedVariant
+    }
+
+    static async deleteVariant(id: string, confirm: boolean) {
+        const deals = await DealsRepo.findByVariantId(id)
+        if (deals.length > 0 && !confirm) {
+            throw new ApiError(
+                412,
+                'Deletion not confirmed. All associated deals will also be deactivated.'
+            )
+        }
+        const deletedVaraint = await VariantRepo.deleteVariant(id)
+        return deletedVaraint
     }
 }
 

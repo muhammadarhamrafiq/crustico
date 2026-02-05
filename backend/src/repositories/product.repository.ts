@@ -1,5 +1,8 @@
 import prisma from '../lib/prisma'
-import type { createProductInput } from '../schemas/productValidation.schemas'
+import type {
+    addProductVariantsInput,
+    createProductInput,
+} from '../schemas/productValidation.schemas'
 
 interface UpdateProductData {
     name?: string
@@ -130,6 +133,32 @@ class ProductRepo {
                     productId,
                     categoryId,
                 },
+            },
+        })
+    }
+
+    static async findVariantByLabel(productId: string, label: string) {
+        return await prisma.variant.findUnique({
+            where: {
+                productId_label: {
+                    productId,
+                    label,
+                },
+            },
+        })
+    }
+    static async addVariants(id: string, variants: addProductVariantsInput) {
+        return await prisma.product.update({
+            where: { id },
+            data: {
+                variants: {
+                    createMany: {
+                        data: variants,
+                    },
+                },
+            },
+            include: {
+                variants: true,
             },
         })
     }
