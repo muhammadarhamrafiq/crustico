@@ -6,6 +6,7 @@ import {
     NotFoundErrorSchema,
     UnprocessableEntityErrorSchema,
     UnsupportedMediaTypeErrorSchema,
+    PreConditionFailedErrorSchema,
 } from '../schemas/error.schema'
 import {
     CreateProductResponseSchema,
@@ -692,6 +693,7 @@ const registerPaths = () => {
             },
         },
     })
+
     registry.registerPath({
         method: 'patch',
         path: '/product/update-variant/{id}',
@@ -764,6 +766,327 @@ const registerPaths = () => {
             },
             500: {
                 description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.registerPath({
+        method: 'delete',
+        path: '/product/remove-variant/{id}',
+        tags: ['Products'],
+        summary: 'Remove a product variant',
+        description: 'Delete a specific product variant from the system',
+        parameters: [
+            {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the product variant to remove',
+                },
+            },
+            {
+                name: 'confirm',
+                in: 'query',
+                required: false,
+                schema: {
+                    type: 'boolean',
+                    description:
+                        'Confirmation flag to proceed with deletion if associated deals exist',
+                },
+            },
+        ],
+        responses: {
+            200: {
+                description: 'Product variant removed successfully',
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                status: {
+                                    type: 'number',
+                                    example: 200,
+                                },
+                                success: {
+                                    type: 'boolean',
+                                    example: true,
+                                },
+                                message: {
+                                    type: 'string',
+                                    example: 'Product variant removed successfully',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid id parameter',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Product variant not found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
+                    },
+                },
+            },
+            412: {
+                description: 'Deletion not confirmed when associated deals exist',
+                content: {
+                    'application/json': {
+                        schema: PreConditionFailedErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.registerPath({
+        method: 'delete',
+        path: 'product/{id}/delete',
+        tags: ['Products'],
+        summary: 'Delete a product',
+        description: 'Permanently delete a product from the system',
+        parameters: [
+            {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the product to delete',
+                },
+            },
+            {
+                name: 'confirm',
+                in: 'query',
+                required: false,
+                schema: {
+                    type: 'boolean',
+                    description:
+                        'Confirmation flag to proceed with deletion if associated deals exist',
+                },
+            },
+        ],
+        responses: {
+            200: {
+                description: 'Product deleted successfully',
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                status: {
+                                    type: 'number',
+                                    example: 200,
+                                },
+                                success: {
+                                    type: 'boolean',
+                                    example: true,
+                                },
+                                message: {
+                                    type: 'string',
+                                    example: 'Product deleted successfully',
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid id parameter',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Product not found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
+                    },
+                },
+            },
+            412: {
+                description: 'Deletion not confirmed when associated deals exist',
+                content: {
+                    'application/json': {
+                        schema: PreConditionFailedErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.registerPath({
+        method: 'get',
+        path: 'product/:id',
+        tags: ['Products'],
+        summary: 'Get product details',
+        description: 'Retrieve detailed information about a specific product by its ID',
+        parameters: [
+            {
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the product to retrieve',
+                },
+            },
+        ],
+        responses: {
+            200: {
+                description: 'Product details retrieved successfully',
+                content: {
+                    'application/json': {
+                        schema: CreateProductResponseSchema,
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid id parameter',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Product not found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.registerPath({
+        method: 'get',
+        path: 'product/',
+        tags: ['Products'],
+        summary: 'List products with pagination and filtering',
+        description:
+            'Retrieve a paginated list of products with optional filtering by category, price range, and search query',
+        parameters: [
+            {
+                name: 'page',
+                in: 'query',
+                required: false,
+                schema: {
+                    type: 'number',
+                    default: 1,
+                    description: 'Page number for pagination',
+                },
+            },
+            {
+                name: 'limit',
+                in: 'query',
+                required: false,
+                schema: {
+                    type: 'number',
+                    default: 10,
+                    description: 'Number of products per page',
+                },
+            },
+            {
+                name: 'category',
+                in: 'query',
+                required: false,
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                    description: 'UUID of the category to filter products by (optional)',
+                },
+            },
+            {
+                name: 'search',
+                in: 'query',
+                schema: {
+                    type: 'string',
+                    description: 'Search query to filter products by name,description, sku',
+                },
+            },
+        ],
+        responses: {
+            200: {
+                description: 'Products retrieved successfully',
+                content: {
+                    'application/json': {
+                        schema: {
+                            type: 'object',
+                            properties: {
+                                status: {
+                                    type: 'number',
+                                    example: 200,
+                                },
+                                success: {
+                                    type: 'boolean',
+                                    example: true,
+                                },
+                                message: {
+                                    type: 'string',
+                                    example: 'Products retrieved successfully',
+                                },
+                                data: {
+                                    type: 'object',
+                                    properties: {
+                                        products: {
+                                            type: 'array',
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+            500: {
+                description: 'Internal Server Error',
                 content: {
                     'application/json': {
                         schema: InternalServerErrorSchema,
