@@ -28,7 +28,6 @@ app.use(
         swaggerOptions: {
             defaultModelsExpandDepth: -1,
             docExpansion: 'list',
-            filter: true,
         },
     })
 )

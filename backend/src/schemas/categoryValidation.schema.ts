@@ -27,4 +27,10 @@ export const categorySchema = z
         },
     })
 
+export const categoryResponse = z.object({
+    status: z.number().openapi({ example: 201 }),
+    success: z.boolean().openapi({ example: true }),
+    message: z.string().openapi({ example: 'Category created successfully' }),
+    data: categorySchema,
+})
 export type categoryInput = z.infer<typeof categorySchema>
