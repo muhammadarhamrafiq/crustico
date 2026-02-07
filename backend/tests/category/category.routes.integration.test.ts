@@ -4,7 +4,7 @@ import { resetDatabase } from '../db'
 import prisma from '../../src/lib/prisma'
 import { describe, beforeAll, it, expect } from 'vitest'
 
-describe('POST /categories/add', () => {
+describe('POST api/v1/categories/add', () => {
     beforeAll(async () => {
         await resetDatabase()
         await prisma.category.create({
@@ -17,31 +17,29 @@ describe('POST /categories/add', () => {
     })
 
     it('should return correct response for invalid input', async () => {
-        const response = await request(app).post('/categories/add').send({
+        const response = await request(app).post('/api/v1/categories/add').send({
             name: '',
             description: 'A category with an empty name',
             slug: 'empty-name-category',
         })
 
         expect(response.status).toBe(400)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body.error).toBe('Name is required and must be a non-empty string.')
+        expect(response.body.message).toBe('Name must contain at least 3 characters')
     })
 
     it('should return correct response for uniquess failure', async () => {
-        const response = await request(app).post('/categories/add').send({
+        const response = await request(app).post('/api/v1/categories/add').send({
             name: 'Existing Category',
             description: 'Trying to create a category with a duplicate name',
             slug: 'existing-category-duplicate',
         })
 
-        expect(response.status).toBe(400)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body.error).toBe('name already exist in Category')
+        expect(response.status).toBe(409)
+        expect(response.body.message).toBe('name already exist in Category')
     })
 
     it('should create a new category successfully', async () => {
-        const response = await request(app).post('/categories/add').send({
+        const response = await request(app).post('/api/v1/categories/add').send({
             name: 'New Category',
             description: 'A new category for testing',
             slug: 'new-category',
@@ -56,7 +54,7 @@ describe('POST /categories/add', () => {
     })
 })
 
-describe('GET /categories', () => {
+describe('GET /api/v1/categories', () => {
     beforeAll(async () => {
         await resetDatabase()
         await prisma.category.createMany({
@@ -69,7 +67,7 @@ describe('GET /categories', () => {
     })
 
     it('should return a list of categories', async () => {
-        const response = await request(app).get('/categories')
+        const response = await request(app).get('/api/v1/categories')
         expect(response.status).toBe(200)
         expect(response.body).toHaveProperty('data')
         expect(Array.isArray(response.body.data)).toBe(true)
@@ -81,7 +79,7 @@ describe('GET /categories', () => {
     })
 })
 
-describe('GET /categories/:id', () => {
+describe('GET /api/v1/categories/:id', () => {
     let categoryId: string
 
     beforeAll(async () => {
@@ -97,25 +95,25 @@ describe('GET /categories/:id', () => {
     })
 
     it('should return the category for a valid ID', async () => {
-        const response = await request(app).get(`/categories/${categoryId}`)
+        const response = await request(app).get(`/api/v1/categories/${categoryId}`)
         expect(response.status).toBe(200)
         expect(response.body).toHaveProperty('data')
         expect(response.body.data).toHaveProperty('id', categoryId)
         expect(response.body.data).toHaveProperty('name', 'Test Category')
         expect(response.body.data).toHaveProperty('description', 'A category for testing GET by ID')
         expect(response.body.data).toHaveProperty('slug', 'test-category')
-        expect(response.body.data).toHaveProperty('products')
     })
 
     it('should return 404 for a non-existent ID', async () => {
-        const response = await request(app).get('/categories/9999')
+        const id = crypto.randomUUID()
+        const response = await request(app).get(`/api/v1/categories/${id}`)
+
         expect(response.status).toBe(404)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body.error).toBe('Category not found')
+        expect(response.body.message).toBe('Category not found')
     })
 })
 
-describe('PUT /categories/:id', () => {
+describe('PUT /api/v1/categories/:id', () => {
     let categoryId: string
 
     beforeAll(async () => {
@@ -138,11 +136,12 @@ describe('PUT /categories/:id', () => {
     })
 
     it('should update the category successfully', async () => {
-        const response = await request(app).put(`/categories/${categoryId}`).send({
+        const response = await request(app).put(`/api/v1/categories/${categoryId}`).send({
             name: 'Updated Category Name',
             description: 'Updated description for the category',
             slug: 'updated-category-name',
         })
+
         expect(response.status).toBe(200)
         expect(response.body).toHaveProperty('data')
         expect(response.body.data).toHaveProperty('id', categoryId)
@@ -155,40 +154,38 @@ describe('PUT /categories/:id', () => {
     })
 
     it('should return 404 for a non-existent ID', async () => {
-        const response = await request(app).put('/categories/9999').send({
+        const id = crypto.randomUUID()
+        const response = await request(app).put(`/api/v1/categories/${id}`).send({
             name: 'Non-existent Category',
             description: 'Trying to update a category that does not exist',
             slug: 'non-existent-category',
         })
         expect(response.status).toBe(404)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body.error).toBe('Category not found')
+        expect(response.body.message).toBe('Category not found')
     })
 
     it('should return 400 for invalid input', async () => {
-        const response = await request(app).put(`/categories/${categoryId}`).send({
+        const response = await request(app).put(`/api/v1/categories/${categoryId}`).send({
             name: '',
             description: 'Trying to update with an empty name',
             slug: 'invalid-update-category',
         })
         expect(response.status).toBe(400)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body.error).toBe('Name is required and must be a non-empty string.')
+        expect(response.body.message).toBe('Name must contain at least 3 characters')
     })
 
     it('should return 400 for uniqueness failure', async () => {
-        const response = await request(app).put(`/categories/${categoryId}`).send({
+        const response = await request(app).put(`/api/v1/categories/${categoryId}`).send({
             name: 'Another Category', // This name already exists
             description: 'Trying to update with a duplicate name',
             slug: 'duplicate-name-update',
         })
-        expect(response.status).toBe(400)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body.error).toBe('name already exist in Category')
+        expect(response.status).toBe(409)
+        expect(response.body.message).toBe('name already exist in Category')
     })
 })
 
-describe('DELETE /categories/:id', () => {
+describe('DELETE /api/v1/categories/:id', () => {
     let categoryId: string
 
     beforeAll(async () => {
@@ -203,7 +200,7 @@ describe('DELETE /categories/:id', () => {
         categoryId = category.id
     })
     it('should delete the category successfully', async () => {
-        const response = await request(app).delete(`/categories/${categoryId}`)
+        const response = await request(app).delete(`/api/v1/categories/${categoryId}`)
         expect(response.status).toBe(200)
         expect(response.body).toHaveProperty('data')
         expect(response.body.data).toHaveProperty('id', categoryId)
@@ -213,9 +210,9 @@ describe('DELETE /categories/:id', () => {
     })
 
     it('should return 404 for a non-existent ID', async () => {
-        const response = await request(app).delete('/categories/9999')
+        const id = crypto.randomUUID()
+        const response = await request(app).delete(`/api/v1/categories/${id}`)
         expect(response.status).toBe(404)
-        expect(response.body).toHaveProperty('error')
-        expect(response.body.error).toBe('Category not found')
+        expect(response.body.message).toBe('Category not found')
     })
 })
