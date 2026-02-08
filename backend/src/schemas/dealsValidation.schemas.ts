@@ -75,5 +75,50 @@ export const createDealSchema = z
             message: 'End date must be after start date',
         }
     )
+    .openapi({
+        example: {
+            name: 'Big Mac Combo Deal',
+            slug: 'big-mac-combo-deal',
+            description:
+                'Get a Big Mac, Medium Fries, and Medium Coke for just $7.99 - Save $2.50!',
+            startDate: '2026-02-08',
+            endDate: '2026-03-08',
+            priceModifier: 0.25,
+            items: [
+                {
+                    productId: 'prod_bigmac',
+                    productVariantId: 'variant_regular',
+                    quantity: 1,
+                },
+                {
+                    productId: 'prod_fries',
+                    productVariantId: 'variant_medium',
+                    quantity: 1,
+                },
+                {
+                    productId: 'prod_coke',
+                    productVariantId: 'variant_medium',
+                    quantity: 1,
+                },
+            ],
+        },
+    })
 
 export type createDealInput = z.infer<typeof createDealSchema>
+
+export const createDealResponseSchema = z.object({
+    status: z.number().openapi({ example: 201 }),
+    message: z.string().openapi({ example: 'Deal created successfully' }),
+    data: z.object().openapi({
+        example: {
+            id: 'deal_12345',
+            name: 'Big Mac Combo Deal',
+            slug: 'big-mac-combo-deal',
+            description:
+                'Get a Big Mac, Medium Fries, and Medium Coke for just $7.99 - Save $2.50!',
+            startDate: '2026-02-08T00:00:00.000Z',
+            endDate: '2026-03-08T00:00:00.000Z',
+            priceModifier: 0.25,
+        },
+    }),
+})

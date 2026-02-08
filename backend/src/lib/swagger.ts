@@ -20,5 +20,6 @@ export const openApiDoc = new OpenApiGeneratorV3(registry.definitions).generateD
     tags: [
         { name: 'Products', description: 'Operations related to products' },
         { name: 'Category', description: 'Operations related to categories' },
+        { name: 'Deals', description: 'Operations related to deals' },
     ],
 })
