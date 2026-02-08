@@ -462,6 +462,9 @@ describe('DELETE /api/v1/product/delete-variant/:variantId', () => {
             },
         })
 
+        variantId1 = product.variants.find((v) => v.label === 'c')?.id as string
+        variantId2 = product.variants.find((v) => v.label === 'm')?.id as string
+
         await prisma.deal.create({
             data: {
                 name: 'Deal One',
@@ -471,7 +474,7 @@ describe('DELETE /api/v1/product/delete-variant/:variantId', () => {
                 dealItems: {
                     create: {
                         productId: product.id,
-                        productVariantId: product.variants[0].id,
+                        productVariantId: variantId1,
                     },
                 },
             },
@@ -486,14 +489,11 @@ describe('DELETE /api/v1/product/delete-variant/:variantId', () => {
                 dealItems: {
                     create: {
                         productId: product.id,
-                        productVariantId: product.variants[1].id,
+                        productVariantId: variantId1,
                     },
                 },
             },
         })
-
-        variantId1 = product.variants.find((v) => v.label === 'c')?.id as string
-        variantId2 = product.variants.find((v) => v.label === 'm')?.id as string
     })
 
     it('should return correct response for non-existent variant', async () => {
