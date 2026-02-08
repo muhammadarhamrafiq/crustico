@@ -11,6 +11,7 @@ describe('POST /deals/add', () => {
             variants: true
         }
     }>
+    let startDate: string, endDate: string
     beforeAll(async () => {
         await resetDatabase()
         await prisma.deal.create({
@@ -44,16 +45,33 @@ describe('POST /deals/add', () => {
                 variants: true,
             },
         })
+
+        startDate = new Date(Date.now()).toISOString()
+        endDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
     })
 
     it('should invalidate the request with invalid data', async () => {
-        const res = await request(app).post('/api/v1/deals/add').send({
-            name: '',
-            slug: 'invalid-deal',
-            priceModifier: -10,
-            startDate: '2026-01-12',
-            endDate: '2026-4-31',
-        })
+        const res = await request(app)
+            .post('/api/v1/deals/add')
+            .send({
+                name: '',
+                slug: 'invalid-deal',
+                priceModifier: -10,
+                startDate: '2026-01-12',
+                endDate: '2026-4-31',
+                items: [
+                    {
+                        productId: crypto.randomUUID(),
+                        productVariantId: crypto.randomUUID(),
+                        quantity: 2,
+                    },
+                    {
+                        productId: crypto.randomUUID(),
+                        productVariantId: crypto.randomUUID(),
+                        quantity: 2,
+                    },
+                ],
+            })
 
         expect(res.status).toBe(400)
         expect(res.body.message).toBe('Name must contain at least 3 characters')
@@ -66,14 +84,14 @@ describe('POST /deals/add', () => {
                 name: 'Valid Deal',
                 slug: 'valid-deal',
                 priceModifier: -10,
-                startDate: '2024-01-01',
-                endDate: '2024-12-31',
-                productIds: [
+                startDate: startDate,
+                endDate: endDate,
+                items: [
                     {
                         productId: crypto.randomUUID(),
                         quantity: 2,
                     },
-                ], // Non-existing product ID
+                ],
             })
 
         expect(res.status).toBe(422)
@@ -87,12 +105,12 @@ describe('POST /deals/add', () => {
                 name: 'Valid Deal',
                 slug: 'valid-deal',
                 priceModifier: -10,
-                startDate: '2024-01-01',
-                endDate: '2024-12-31',
+                startDate: startDate,
+                endDate: endDate,
                 items: [
                     {
                         productId: product.id,
-                        productVariantId: crypto.randomUUID(), // Non-existing variant ID
+                        productVariantId: crypto.randomUUID(),
                         quantity: 2,
                     },
                 ],
@@ -103,13 +121,22 @@ describe('POST /deals/add', () => {
     })
 
     it('should validate the unique constraints', async () => {
-        const res = await request(app).post('/api/v1/deals/add').send({
-            name: 'Test Deal',
-            slug: 'test-deal-2',
-            priceModifier: -10,
-            startDate: '2024-01-01',
-            endDate: '2024-12-31',
-        })
+        const res = await request(app)
+            .post('/api/v1/deals/add')
+            .send({
+                name: 'Test Deal',
+                slug: 'test-deal-2',
+                priceModifier: -10,
+                startDate: startDate,
+                endDate: endDate,
+                items: [
+                    {
+                        productId: product.id,
+                        productVariantId: product.variants[0].id,
+                        quantity: 2,
+                    },
+                ],
+            })
 
         expect(res.status).toBe(409)
         expect(res.body.message).toBe('name already exist in Deal')
@@ -122,8 +149,8 @@ describe('POST /deals/add', () => {
                 name: 'Valid Deal',
                 slug: 'valid-deal',
                 priceModifier: -10,
-                startDate: '2024-01-01',
-                endDate: '2024-12-31',
+                startDate: startDate,
+                endDate: endDate,
                 items: [
                     {
                         productId: product.id,

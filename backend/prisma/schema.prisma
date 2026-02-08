@@ -79,7 +79,7 @@ model CategoryProduct {
 model Deal {
   id            String    @id @default(uuid())
   slug          String    @unique
-  name          String
+  name          String    @unique
   description   String?
   priceModifier Decimal   @default(0) @map("price_modifier") @db.Decimal(10, 2)
   startDate     DateTime? @map("start_date")

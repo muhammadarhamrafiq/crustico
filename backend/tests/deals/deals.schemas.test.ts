@@ -7,6 +7,18 @@ describe('Create Deal Schema', () => {
             name: 'A',
             slug: 'valid-slug',
             priceModifier: -10,
+            items: [
+                {
+                    productId: crypto.randomUUID(),
+                    productVariantId: crypto.randomUUID(),
+                    quantity: 2,
+                },
+                {
+                    productId: crypto.randomUUID(),
+                    productVariantId: crypto.randomUUID(),
+                    quantity: 2,
+                },
+            ],
         })
 
         expect(res.success).toBe(false)
@@ -17,6 +29,18 @@ describe('Create Deal Schema', () => {
             name: 'Valid Name',
             slug: 'Invalid Slug!',
             priceModifier: -10,
+            items: [
+                {
+                    productId: crypto.randomUUID(),
+                    productVariantId: crypto.randomUUID(),
+                    quantity: 2,
+                },
+                {
+                    productId: crypto.randomUUID(),
+                    productVariantId: crypto.randomUUID(),
+                    quantity: 2,
+                },
+            ],
         })
         expect(res.success).toBe(false)
     })
@@ -27,6 +51,18 @@ describe('Create Deal Schema', () => {
             slug: 'valid-slug',
             priceModifier: -10,
             startDate: '2024-01-01',
+            items: [
+                {
+                    productId: crypto.randomUUID(),
+                    productVariantId: crypto.randomUUID(),
+                    quantity: 2,
+                },
+                {
+                    productId: crypto.randomUUID(),
+                    productVariantId: crypto.randomUUID(),
+                    quantity: 2,
+                },
+            ],
         })
 
         expect(res.success).toBe(false)
@@ -37,8 +73,8 @@ describe('Create Deal Schema', () => {
             name: 'Valid Name',
             slug: 'valid-slug',
             priceModifier: -10,
-            startDate: new Date(Date.now() + 1000).toISOString(),
-            endDate: new Date(Date.now() - 1000).toISOString(),
+            startDate: new Date(Date.now()).toISOString(),
+            endDate: new Date(Date.now()).toISOString(),
         })
 
         const validRes = createDealSchema.safeParse({
@@ -46,7 +82,19 @@ describe('Create Deal Schema', () => {
             slug: 'valid-slug',
             priceModifier: -10,
             startDate: new Date(Date.now() + 1000).toISOString(),
-            endDate: new Date(Date.now() + 2000).toISOString(),
+            endDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+            items: [
+                {
+                    productId: crypto.randomUUID(),
+                    productVariantId: crypto.randomUUID(),
+                    quantity: 2,
+                },
+                {
+                    productId: crypto.randomUUID(),
+                    productVariantId: crypto.randomUUID(),
+                    quantity: 2,
+                },
+            ],
         })
 
         expect(res.success).toBe(false)
