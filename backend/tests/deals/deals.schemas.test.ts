@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createDealSchema } from '../../src/schemas/dealsValidation.schemas'
+import { createDealSchema, updateDealSchema } from '../../src/schemas/dealsValidation.schemas'
 
 describe('Create Deal Schema', () => {
     it('name must be at least 3 characters long', () => {
@@ -176,6 +176,35 @@ describe('Create Deal Schema', () => {
                 },
             ],
         })
+        expect(res.success).toBe(true)
+    })
+})
+
+describe('Update Deal Schema', () => {
+    it('should invalidate the empty object', () => {
+        const res = updateDealSchema.safeParse({})
+
+        expect(res.success).toBe(false)
+    })
+
+    it('should be able to validate the start and end date', () => {
+        const res = updateDealSchema.safeParse({
+            name: 'Test Deal',
+            slug: 'test-deal',
+            description: 'Deal for testing',
+            priceModifier: -90,
+            startDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+            endDate: new Date(Date.now()),
+        })
+
+        expect(res.success).toBe(false)
+    })
+
+    it('should accept the partial data', () => {
+        const res = updateDealSchema.safeParse({
+            slug: 'test-deal',
+        })
+
         expect(res.success).toBe(true)
     })
 })
