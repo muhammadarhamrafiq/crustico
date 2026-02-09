@@ -238,6 +238,15 @@ class ProductRepo {
         })
     }
 
+    static async find(where: ProductWhereInput) {
+        return await prisma.product.findMany({
+            where,
+            include: {
+                variants: true,
+            },
+        })
+    }
+
     static async countAll(where: ProductWhereInput) {
         return await prisma.product.count({
             where: {

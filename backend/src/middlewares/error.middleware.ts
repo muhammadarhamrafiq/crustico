@@ -2,7 +2,10 @@ import type { Request, Response, NextFunction } from 'express'
 import { ApiResponse } from '../utils/apiResponse'
 import { ApiError } from '../utils/apiError'
 import { ZodError } from 'zod'
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client'
+import {
+    PrismaClientKnownRequestError,
+    PrismaClientUnknownRequestError,
+} from '@prisma/client/runtime/client'
 import { handlePrismaError } from '../utils/prismaError'
 
 export const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
@@ -58,7 +61,7 @@ export const errorHandler = (err: Error, req: Request, res: Response, _next: Nex
         .json(
             new ApiResponse(
                 500,
-                'Internal Server Error',
+                err.message || 'Internal Server Error',
                 process.env.NODE_ENV !== 'production'
                     ? { message: err.message, stack: err.stack }
                     : undefined

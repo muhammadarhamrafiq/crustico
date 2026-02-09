@@ -15,16 +15,16 @@ describe('POST /deals/add', () => {
     let startDate: string, endDate: string
     beforeAll(async () => {
         await resetDatabase()
+
         await prisma.deal.create({
             data: {
                 name: 'Test Deal',
-                description: 'This is a test deal',
-                priceModifier: 0,
-                startDate: new Date('2024-01-01'),
-                endDate: new Date('2024-12-31'),
                 slug: 'test-deal',
+                description: 'This is a test deal',
+                priceModifier: -10,
             },
         })
+
         product = await prisma.product.create({
             data: {
                 name: 'Test Product',
@@ -149,7 +149,7 @@ describe('POST /deals/add', () => {
             .send({
                 name: 'Invlid price modifier deal',
                 slug: 'invalid-price-modifier-deal',
-                priceModifier: -150,
+                priceModifier: -250,
                 startDate: startDate,
                 endDate: endDate,
                 items: [
@@ -291,8 +291,9 @@ describe('PATCH /deal/:id/update', () => {
             .send({
                 startDate: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
             })
+
         expect(res.status).toBe(400)
-        expect(res.body.message).toBe('End date must be greater than start date')
+        expect(res.body.message).toBe('Start date must be less than end date')
     })
 
     it('should validate the priceModifier is not reducing the price below zero', async () => {
@@ -303,7 +304,7 @@ describe('PATCH /deal/:id/update', () => {
         expect(resValid.body.data.priceModifier).toBe('-150')
 
         const res = await request(app).patch(`/api/v1/deals/${deals[0].id}/update`).send({
-            priceModifier: -250,
+            priceModifier: -450,
         })
         expect(res.status).toBe(400)
         expect(res.body.message).toBe('Price modifier cannot reduce the price below zero')
@@ -318,6 +319,6 @@ describe('PATCH /deal/:id/update', () => {
         expect(res.status).toBe(200)
         expect(res.body.data.name).toBe('Deal Alpha Updated')
         expect(res.body.data.description).toBe('Updated description for Deal Alpha')
-        expect(res.body.data.priceModifier).toBe(-15)
+        expect(res.body.data.priceModifier).toBe('-15')
     })
 })

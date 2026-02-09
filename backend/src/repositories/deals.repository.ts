@@ -1,3 +1,4 @@
+import type { DealUpdateInput } from '../generated/prisma/models'
 import prisma from '../lib/prisma'
 import { createDealInput } from '../schemas/dealsValidation.schemas'
 
@@ -21,6 +22,13 @@ class DealsRepository {
                     },
                 },
             },
+        })
+    }
+
+    static async update(id: string, data: DealUpdateInput) {
+        return await prisma.deal.update({
+            where: { id },
+            data,
         })
     }
 
@@ -50,6 +58,15 @@ class DealsRepository {
                     },
                     deletedAt: null,
                 },
+            },
+        })
+    }
+
+    static async findById(id: string) {
+        return await prisma.deal.findUnique({
+            where: { id, deletedAt: null },
+            include: {
+                dealItems: true,
             },
         })
     }
