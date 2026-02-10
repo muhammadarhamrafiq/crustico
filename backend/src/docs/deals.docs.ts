@@ -1,9 +1,15 @@
 import { registry } from '../lib/swagger'
-import { createDealSchema, createDealResponseSchema } from '../schemas/dealsValidation.schemas'
+import {
+    createDealSchema,
+    createDealResponseSchema,
+    updateDealSchema,
+    updateDealResponseSchema,
+} from '../schemas/dealsValidation.schemas'
 import {
     BadRequestErrorSchema,
     ConflictErrorSchema,
     InternalServerErrorSchema,
+    NotFoundErrorSchema,
     UnprocessableEntityErrorSchema,
 } from '../schemas/error.schema'
 
@@ -59,6 +65,77 @@ const registerDealPaths = () => {
             },
             500: {
                 description: 'Internal server error',
+                content: {
+                    'application/json': {
+                        schema: InternalServerErrorSchema,
+                    },
+                },
+            },
+        },
+    })
+
+    registry.register('updateDeal', updateDealSchema)
+    registry.registerPath({
+        method: 'patch',
+        path: '/deal/{id}/update',
+        summary: 'Update Deal',
+        tags: ['Deals'],
+        parameters: [
+            {
+                in: 'path',
+                name: 'id',
+                schema: {
+                    type: 'string',
+                    format: 'uuid',
+                },
+                required: true,
+            },
+        ],
+        requestBody: {
+            required: true,
+            content: {
+                'application/json': {
+                    schema: {
+                        $ref: '#components/schemas/updateProductSchema',
+                    },
+                },
+            },
+        },
+        responses: {
+            200: {
+                description: 'Deal updated successfully',
+                content: {
+                    'application/json': {
+                        schema: updateDealResponseSchema,
+                    },
+                },
+            },
+            400: {
+                description: 'Invalid Input',
+                content: {
+                    'application/json': {
+                        schema: BadRequestErrorSchema,
+                    },
+                },
+            },
+            404: {
+                description: 'Deal not found',
+                content: {
+                    'application/json': {
+                        schema: NotFoundErrorSchema,
+                    },
+                },
+            },
+            409: {
+                description: 'Name or slug is already used',
+                content: {
+                    'application/json': {
+                        schema: ConflictErrorSchema,
+                    },
+                },
+            },
+            500: {
+                description: 'Internal Server Error',
                 content: {
                     'application/json': {
                         schema: InternalServerErrorSchema,
