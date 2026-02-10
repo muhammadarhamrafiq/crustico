@@ -322,3 +322,439 @@ describe('PATCH /deal/:id/update', () => {
         expect(res.body.data.priceModifier).toBe('-15')
     })
 })
+
+describe('PATCH /deal/:id/add-items', () => {
+    let deal: Deal
+    let products: Array<
+        ProductGetPayload<{
+            include: {
+                variants: true
+            }
+        }>
+    >
+    beforeAll(async () => {
+        await resetDatabase()
+
+        products = await Promise.all([
+            prisma.product.create({
+                data: {
+                    name: 'Product A',
+                    description: 'Description for Product A',
+                    basePrice: 100,
+                    sku: 'PROD-A',
+                    slug: 'product-a',
+                    variants: {
+                        create: [
+                            {
+                                label: 'Default Variant',
+                                description: 'Default variant of Product A',
+                                priceModifier: 110,
+                            },
+                        ],
+                    },
+                },
+                include: {
+                    variants: true,
+                },
+            }),
+            prisma.product.create({
+                data: {
+                    name: 'Product B',
+                    description: 'Description for Product B',
+                    basePrice: 150,
+                    sku: 'PROD-B',
+                    slug: 'product-b',
+                    variants: {
+                        create: [
+                            {
+                                label: 'Default Variant',
+                                description: 'Default variant of Product B',
+                                priceModifier: 160,
+                            },
+                        ],
+                    },
+                },
+                include: {
+                    variants: true,
+                },
+            }),
+        ])
+
+        deal = await prisma.deal.create({
+            data: {
+                name: 'Test Deal',
+                slug: 'test-deal',
+                priceModifier: -10,
+                description: 'This is a test deal',
+                dealItems: {
+                    create: [
+                        {
+                            productId: products[0].id,
+                            productVariantId: products[0].variants[0].id,
+                            quantity: 2,
+                        },
+                    ],
+                },
+            },
+        })
+    })
+
+    it('should return correct response for non-existing deal', async () => {
+        const res = await request(app)
+            .patch(`/api/v1/deals/${crypto.randomUUID()}/add-items`)
+            .send({
+                items: [
+                    {
+                        productId: products[1].id,
+                        productVariantId: products[1].variants[0].id,
+                        quantity: 3,
+                    },
+                ],
+            })
+
+        expect(res.status).toBe(404)
+        expect(res.body.message).toBe('Deal not found')
+    })
+
+    it('should return correct response for invalid data', async () => {
+        const res = await request(app)
+            .patch(`/api/v1/deals/${deal.id}/add-items`)
+            .send({
+                items: [{ productVariantId: products[1].variants[0].id, quantity: 3 }],
+            })
+
+        expect(res.status).toBe(422)
+        expect(res.body.message).toBe('productId is required string')
+    })
+
+    it('should return correct response for non-existing product', async () => {
+        const res = await request(app)
+            .patch(`/api/v1/deals/${deal.id}/add-items`)
+            .send({
+                items: [
+                    {
+                        productId: crypto.randomUUID(),
+                        productVariantId: products[1].variants[0].id,
+                        quantity: 3,
+                    },
+                ],
+            })
+
+        expect(res.status).toBe(422)
+        expect(res.body.message).toBe('Referenced product not found')
+    })
+
+    it('should return correct response for non-existing product variant', async () => {
+        const res = await request(app)
+            .patch(`/api/v1/deals/${deal.id}/add-items`)
+            .send({
+                items: [
+                    {
+                        productId: products[1].id,
+                        productVariantId: crypto.randomUUID(),
+                        quantity: 3,
+                    },
+                ],
+            })
+
+        expect(res.status).toBe(422)
+        expect(res.body.message).toBe('Referenced product variant not found')
+    })
+
+    it('should validate the unique constraint for deal items', async () => {
+        const res = await request(app)
+            .patch(`/api/v1/deals/${deal.id}/add-items`)
+            .send({
+                items: [
+                    {
+                        productId: products[0].id,
+                        productVariantId: products[0].variants[0].id,
+                        quantity: 3,
+                    },
+                ],
+            })
+
+        expect(res.status).toBe(409)
+        expect(res.body.message).toBe(
+            `Deal item with productId ${products[0].id} and productVariantId ${products[0].variants[0].id} already exists in the deal`
+        )
+    })
+
+    it('should add items to the deal with valid data', async () => {
+        const res = await request(app)
+            .patch(`/api/v1/deals/${deal.id}/add-items`)
+            .send({
+                items: [
+                    {
+                        productId: products[1].id,
+                        productVariantId: products[1].variants[0].id,
+                        quantity: 3,
+                    },
+                ],
+            })
+
+        expect(res.status).toBe(200)
+        expect(res.body.data.items).toHaveLength(2)
+        expect(res.body.data.items[1]).toMatchObject({
+            productId: products[1].id,
+            productVariantId: products[1].variants[0].id,
+            quantity: 3,
+        })
+    })
+})
+
+describe('DELETE /deal/:id/remove-item', () => {
+    let deal: Deal
+    let products: Array<
+        ProductGetPayload<{
+            include: {
+                variants: true
+            }
+        }>
+    >
+    beforeAll(async () => {
+        await resetDatabase()
+
+        products = await Promise.all([
+            prisma.product.create({
+                data: {
+                    name: 'Product A',
+                    description: 'Description for Product A',
+                    basePrice: 100,
+                    sku: 'PROD-A',
+                    slug: 'product-a',
+                    variants: {
+                        create: [
+                            {
+                                label: 'Default Variant',
+                                description: 'Default variant of Product A',
+                                priceModifier: 110,
+                            },
+                        ],
+                    },
+                },
+                include: {
+                    variants: true,
+                },
+            }),
+            prisma.product.create({
+                data: {
+                    name: 'Product B',
+                    description: 'Description for Product B',
+                    basePrice: 150,
+                    sku: 'PROD-B',
+                    slug: 'product-b',
+                    variants: {
+                        create: [
+                            {
+                                label: 'Default Variant',
+                                description: 'Default variant of Product B',
+                                priceModifier: 160,
+                            },
+                        ],
+                    },
+                },
+                include: {
+                    variants: true,
+                },
+            }),
+        ])
+
+        deal = await prisma.deal.create({
+            data: {
+                name: 'Test Deal',
+                slug: 'test-deal',
+                priceModifier: -10,
+                description: 'This is a test deal',
+                dealItems: {
+                    create: [
+                        {
+                            productId: products[0].id,
+                            productVariantId: products[0].variants[0].id,
+                            quantity: 2,
+                        },
+                    ],
+                },
+            },
+        })
+    })
+
+    it('should return correct response for non-existing deal', async () => {
+        const res = await request(app)
+            .delete(`/api/v1/deals/${crypto.randomUUID()}/remove-item`)
+            .query({
+                productId: products[0].id,
+                productVariantId: products[0].variants[0].id,
+            })
+
+        expect(res.status).toBe(404)
+        expect(res.body.message).toBe('Deal not found')
+    })
+
+    it('should return correct response for non-existing deal item', async () => {
+        const res = await request(app).delete(`/api/v1/deals/${deal.id}/remove-item`).query({
+            productId: products[1].id,
+            productVariantId: products[1].variants[0].id,
+        })
+
+        expect(res.status).toBe(404)
+        expect(res.body.message).toBe('Deal item not found in the deal')
+    })
+
+    it('should warn if the deal deactivation if price of deal falls below zero and no confirmed flag is passed', async () => {
+        const res = await request(app).delete(`/api/v1/deals/${deal.id}/remove-item`).query({
+            productId: products[0].id,
+            productVariantId: products[0].variants[0].id,
+        })
+
+        expect(res.status).toBe(412)
+        expect(res.body.message).toBe(
+            'Removing this item will reduce the deal price below zero. Please confirm to proceed with the removal.'
+        )
+    })
+
+    it('should remove the item from the deal', async () => {
+        const res = await request(app).delete(`/api/v1/deals/${deal.id}/remove-item`).query({
+            productId: products[0].id,
+            productVariantId: products[0].variants[0].id,
+            confirmed: true,
+        })
+
+        expect(res.status).toBe(200)
+        expect(res.body.data.items).toHaveLength(0)
+    })
+})
+
+describe('GET /deals/:id', () => {
+    let deal: Deal
+    beforeAll(async () => {
+        await resetDatabase()
+
+        deal = await prisma.deal.create({
+            data: {
+                name: 'Test Deal',
+                slug: 'test-deal',
+                priceModifier: -10,
+                description: 'This is a test deal',
+                startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+                dealItems: {
+                    create: [
+                        {
+                            product: {
+                                create: {
+                                    name: 'Test Product',
+                                    description: 'This is a test product',
+                                    basePrice: 100,
+                                    sku: 'TP-001',
+                                    slug: 'test-product',
+                                },
+                            },
+                        },
+                        {
+                            product: {
+                                create: {
+                                    name: 'Test Product 2',
+                                    description: 'This is another test product',
+                                    basePrice: 150,
+                                    sku: 'TP-002',
+                                    slug: 'test-product-2',
+                                },
+                            },
+                        },
+                    ],
+                },
+            },
+        })
+    })
+
+    it('should return correct response for non-existing deal', async () => {
+        const res = await request(app).get(`/api/v1/deals/${crypto.randomUUID()}`)
+
+        expect(res.status).toBe(404)
+        expect(res.body.message).toBe('Deal not found')
+    })
+
+    it('should return the deal details', async () => {
+        const res = await request(app).get(`/api/v1/deals/${deal.id}`)
+
+        expect(res.status).toBe(200)
+        expect(res.body.data).toBeDefined()
+        expect(res.body.data.name).toBe(deal.name)
+        expect(res.body.data.slug).toBe(deal.slug)
+        expect(res.body.data.description).toBe(deal.description)
+        expect(res.body.data.priceModifier).toBe(deal.priceModifier.toString())
+        expect(res.body.data.items).toHaveLength(2)
+    })
+})
+
+describe('GET /deals', () => {
+    beforeAll(async () => {
+        await resetDatabase()
+
+        await prisma.deal.createMany({
+            data: [
+                {
+                    name: 'Deal 1',
+                    slug: 'deal-1',
+                    description: 'Description for Deal 1',
+                    priceModifier: -10,
+                    startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                    endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+                },
+                {
+                    name: 'Deal 2',
+                    slug: 'deal-2',
+                    description: 'Description for Deal 2',
+                    priceModifier: -20,
+                    startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                    endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+                },
+            ],
+        })
+    })
+
+    it('should return the list of deals', async () => {
+        const res = await request(app).get('/api/v1/deals')
+
+        expect(res.status).toBe(200)
+        expect(res.body.data).toHaveLength(2)
+        expect(res.body.data[0].name).toBe('Deal 1')
+        expect(res.body.data[1].name).toBe('Deal 2')
+    })
+})
+
+describe('DELETE /deal/:id', () => {
+    let deal: Deal
+    beforeAll(async () => {
+        await resetDatabase()
+
+        deal = await prisma.deal.create({
+            data: {
+                name: 'Test Deal',
+                slug: 'test-deal',
+                priceModifier: -10,
+                description: 'This is a test deal',
+                startDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+                endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+            },
+        })
+    })
+
+    it('should return correct response for non-existing deal', async () => {
+        const res = await request(app).delete(`/api/v1/deals/${crypto.randomUUID()}`)
+
+        expect(res.status).toBe(404)
+        expect(res.body.message).toBe('Deal not found')
+    })
+
+    it('should delete the deal', async () => {
+        const res = await request(app).delete(`/api/v1/deals/${deal.id}`)
+
+        expect(res.status).toBe(200)
+        expect(res.body.message).toBe('Deal deleted successfully')
+
+        const checkRes = await request(app).get(`/api/v1/deals/${deal.id}`)
+        expect(checkRes.status).toBe(404)
+    })
+})
