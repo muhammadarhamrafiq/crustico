@@ -70,6 +70,59 @@ class DealsRepository {
             },
         })
     }
+
+    static async addItems(
+        id: string,
+        items: { productId: string; productVariantId: string | null; quantity: number }[]
+    ) {
+        return await prisma.deal.update({
+            where: { id },
+            data: {
+                dealItems: {
+                    createMany: {
+                        data: items,
+                    },
+                },
+            },
+            include: {
+                dealItems: true,
+            },
+        })
+    }
+
+    static async removeItem(id: string, productId: string, productVariantId: string | null) {
+        return await prisma.deal.update({
+            where: { id },
+            data: {
+                dealItems: {
+                    deleteMany: {
+                        productId: productId,
+                        productVariantId: productVariantId,
+                    },
+                },
+            },
+            include: {
+                dealItems: true,
+            },
+        })
+    }
+
+    static async findAll() {
+        return await prisma.deal.findMany({
+            where: {
+                deletedAt: null,
+            },
+        })
+    }
+
+    static async delete(id: string) {
+        return await prisma.deal.update({
+            where: { id },
+            data: {
+                deletedAt: new Date(),
+            },
+        })
+    }
 }
 
 export default DealsRepository

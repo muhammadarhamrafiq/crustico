@@ -75,6 +75,77 @@ class DealServices {
         const updatedDeal = await DealRepo.update(id, cleared)
         return updatedDeal
     }
+
+    static async addItemsToDeal(
+        id: string,
+        items: { productId: string; productVariantId: string | null; quantity: number }[]
+    ) {
+        const deal = await DealRepo.findById(id)
+        if (!deal) {
+            throw new ApiError(404, 'Deal not found')
+        }
+        for (const item of items) {
+            if (
+                deal.dealItems.some(
+                    (i) =>
+                        i.productId === item.productId &&
+                        i.productVariantId === item.productVariantId
+                )
+            ) {
+                throw new ApiError(
+                    409,
+                    `Deal item with productId ${item.productId} and productVariantId ${item.productVariantId} already exists in the deal`
+                )
+            }
+        }
+        return await DealRepo.addItems(id, items)
+    }
+
+    static async removeDealItem(
+        id: string,
+        productId: string,
+        productVariantId: string | null,
+        confirmed: boolean
+    ) {
+        const deal = await DealRepo.findById(id)
+        if (!deal) throw new ApiError(404, 'Deal not found')
+        const item = deal.dealItems.find(
+            (i) => i.productId === productId && i.productVariantId === productVariantId
+        )
+        if (!item) throw new ApiError(404, 'Deal item not found in the deal')
+
+        if (!confirmed) {
+            const total = await this.calculateTotalPrice(deal.dealItems)
+            const itemPrice = await this.calculateTotalPrice([
+                { productId, productVariantId, quantity: item.quantity },
+            ])
+            const priceAfterRemoval = total - itemPrice + Number(deal.priceModifier)
+            if (priceAfterRemoval < 0) {
+                throw new ApiError(
+                    412,
+                    'Removing this item will reduce the deal price below zero. Please confirm to proceed with the removal.'
+                )
+            }
+        }
+
+        return await DealRepo.removeItem(id, productId, productVariantId)
+    }
+
+    static async getById(id: string) {
+        const deal = await DealRepo.findById(id)
+        if (!deal) throw new ApiError(404, 'Deal not found')
+        return deal
+    }
+
+    static async getAll() {
+        const deals = await DealRepo.findAll()
+        return deals
+    }
+
+    static async deleteDeal(id: string) {
+        const deal = await DealRepo.delete(id)
+        return deal
+    }
 }
 
 export default DealServices

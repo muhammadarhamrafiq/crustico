@@ -4,8 +4,8 @@ import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
 extendZodWithOpenApi(z)
 
 const dealItemSchema = z.object({
-    productId: z.string().trim(),
-    productVariantId: z.string().trim().nullable().default(null),
+    productId: z.uuid().trim(),
+    productVariantId: z.uuid().trim().nullable().default(null),
     quantity: z.number().int().positive().optional().default(1),
 })
 
@@ -123,8 +123,32 @@ export const updateDealSchema = z
         return true
     })
 
+export const addItemsSchema = z
+    .object({
+        items: itemsSchema,
+    })
+    .openapi({
+        example: {
+            items: [
+                {
+                    productId: 'prod_id',
+                    productVariantId: 'product_variant_id',
+                    quantity: 1,
+                },
+            ],
+        },
+    })
+
+export const removeDealItemSchema = z.object({
+    productId: z.uuid(),
+    productVariantId: z.uuid(),
+    confirmed: z.string().default('false'),
+})
+
 export type createDealInput = z.infer<typeof createDealSchema>
 export type updateDealInput = z.infer<typeof updateDealSchema>
+export type addItemsToDealInput = z.infer<typeof addItemsSchema>
+export type removeDealItemInput = z.infer<typeof removeDealItemSchema>
 
 export const createDealResponseSchema = z.object({
     status: z.number().openapi({ example: 201 }),

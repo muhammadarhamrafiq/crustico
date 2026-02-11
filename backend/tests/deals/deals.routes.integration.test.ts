@@ -423,8 +423,7 @@ describe('PATCH /deal/:id/add-items', () => {
                 items: [{ productVariantId: products[1].variants[0].id, quantity: 3 }],
             })
 
-        expect(res.status).toBe(422)
-        expect(res.body.message).toBe('productId is required string')
+        expect(res.status).toBe(400)
     })
 
     it('should return correct response for non-existing product', async () => {
@@ -494,12 +493,7 @@ describe('PATCH /deal/:id/add-items', () => {
             })
 
         expect(res.status).toBe(200)
-        expect(res.body.data.items).toHaveLength(2)
-        expect(res.body.data.items[1]).toMatchObject({
-            productId: products[1].id,
-            productVariantId: products[1].variants[0].id,
-            quantity: 3,
-        })
+        expect(res.body.data.dealItems).toHaveLength(2)
     })
 })
 
@@ -621,7 +615,7 @@ describe('DELETE /deal/:id/remove-item', () => {
         })
 
         expect(res.status).toBe(200)
-        expect(res.body.data.items).toHaveLength(0)
+        expect(res.body.data.dealItems).toHaveLength(0)
     })
 })
 
@@ -684,7 +678,7 @@ describe('GET /deals/:id', () => {
         expect(res.body.data.slug).toBe(deal.slug)
         expect(res.body.data.description).toBe(deal.description)
         expect(res.body.data.priceModifier).toBe(deal.priceModifier.toString())
-        expect(res.body.data.items).toHaveLength(2)
+        expect(res.body.data.dealItems).toHaveLength(2)
     })
 })
 

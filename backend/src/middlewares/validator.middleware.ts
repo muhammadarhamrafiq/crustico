@@ -7,6 +7,6 @@ export const validator =
     (schema: ZodSchema, target: SchemaTarget = 'body') =>
     (req: Request, res: Response, next: NextFunction) => {
         const parsed = schema.parse(req[target])
-        req[target] = parsed
+        if (target !== 'query') req[target] = parsed
         next()
     }
