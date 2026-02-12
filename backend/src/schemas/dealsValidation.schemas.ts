@@ -182,3 +182,27 @@ export const updateDealResponseSchema = z.object({
         },
     }),
 })
+
+export const addItemsResponseSchema = z.object({
+    status: z.number().openapi({ example: 201 }),
+    message: z.string().openapi({ example: 'Items Added successfully' }),
+    data: z.object().openapi({
+        example: {
+            id: 'deal_12345',
+            name: 'Big Mac Combo Deal',
+            slug: 'big-mac-combo-deal',
+            description:
+                'Get a Big Mac, Medium Fries, and Medium Coke for just $7.99 - Save $2.50!',
+            startDate: '2026-02-08T00:00:00.000Z',
+            endDate: '2026-03-08T00:00:00.000Z',
+            priceModifier: 0.25,
+            dealItems: [
+                {
+                    productId: 'product_id_uuid',
+                    productVariantId: 'productVariant_id',
+                    quantity: 2,
+                },
+            ],
+        },
+    }),
+})
