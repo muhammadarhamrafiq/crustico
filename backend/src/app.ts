@@ -12,7 +12,13 @@ import { openApiDoc } from './lib/swagger'
 const app = express()
 startCleanUpJob()
 
-app.use(helmet())
+app.use(
+    helmet({
+        crossOriginResourcePolicy: {
+            policy: 'cross-origin',
+        },
+    })
+)
 app.use(cors())
 app.use(httpLogger)
 app.use(express.json())

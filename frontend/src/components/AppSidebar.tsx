@@ -9,7 +9,7 @@ const AppSidebar = () => {
         <SidebarHeader  className="mx-2 my-3">
             <Link to="/" className="text-lg font-bold flex items-center gap-2">
                 <h1 className="text-lg font-bold flex items-center gap-2">
-                    <img src="crustico.svg" width={30} /> Crustico
+                    <img src="/crustico.svg" width={30} /> Crustico
                 </h1>
             </Link>
         </SidebarHeader>
