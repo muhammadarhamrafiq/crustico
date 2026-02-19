@@ -11,7 +11,7 @@ import useCategories from "@/hooks/useCategories";
 import type { Category } from "@/types";
 import Confirm from "@/components/Confirm";
 
-const Category = ()=> {
+const CategoryPage = ()=> {
     const [search, setSearch] = useState('')
     const {categories, loading, refetch} = useCategories()
 
@@ -83,7 +83,7 @@ const Category = ()=> {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {categories.map((category) => (
+                        {categories.filter((c)=> c.name.includes(search) || c.description?.includes(search)).map((category) => (
                             <TableRow
                                 key={category.id}
                                 className="transition-colors hover:bg-muted/40"
@@ -138,4 +138,4 @@ const Category = ()=> {
     )
 }
 
-export default Category;
+export default CategoryPage;
