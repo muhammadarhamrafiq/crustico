@@ -19,8 +19,12 @@ export interface Product {
     deletedAt?: string | null,
 }
 
+export interface Category {
+    name: string,
+    description?: string,
+    slug: string
+}
+
 export type JSONValue = string | number | boolean | JSONObject | JSONArray;
 export type JSONArray = JSONValue[];
-export interface JSONObject {
-    [key: string]: JSONValue;
-}
+export type JSONObject = Record<string, JSONValue>;

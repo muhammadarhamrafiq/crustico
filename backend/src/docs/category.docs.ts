@@ -11,7 +11,7 @@ const registerCategoryPaths = () => {
     registry.register('categorySchema', categorySchema)
     registry.registerPath({
         method: 'post',
-        path: '/category/add',
+        path: '/categories/add',
         summary: 'Create Category',
         tags: ['Category'],
         requestBody: {
@@ -62,7 +62,7 @@ const registerCategoryPaths = () => {
 
     registry.registerPath({
         method: 'get',
-        path: '/category/',
+        path: '/categories/',
         summary: 'Get All Categories',
         tags: ['Category'],
         responses: {
@@ -101,7 +101,7 @@ const registerCategoryPaths = () => {
 
     registry.registerPath({
         method: 'get',
-        path: '/category/{id}',
+        path: '/categories/{id}',
         summary: 'Get Category by Id',
         tags: ['Category'],
         parameters: [
@@ -153,7 +153,7 @@ const registerCategoryPaths = () => {
 
     registry.registerPath({
         method: 'put',
-        path: '/category/{id}',
+        path: '/categories/{id}',
         summary: 'Update Category by Id',
         tags: ['Category'],
         parameters: [
@@ -223,7 +223,7 @@ const registerCategoryPaths = () => {
 
     registry.registerPath({
         method: 'delete',
-        path: '/category/{id}',
+        path: '/categories/{id}',
         summary: 'Delete Category by Id',
         tags: ['Category'],
         parameters: [

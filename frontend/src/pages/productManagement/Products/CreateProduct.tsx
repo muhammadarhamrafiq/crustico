@@ -112,7 +112,6 @@ const CreateProduct = () => {
 
     setLoading(true);
 
-    // if has image upload it first
     let imageUrl = ""
     if(image){
       const formData = new FormData();
@@ -126,7 +125,6 @@ const CreateProduct = () => {
       imageUrl = response.data.url;
     }
 
-    // then create product with image url
     const product = {
       name: name.trim(),
       sku: sku.trim(),

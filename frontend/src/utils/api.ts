@@ -34,6 +34,19 @@ class API {
         return instance;
     }
 
+    static put(endPoint: string, data: JSONValue | FormData) {
+        const instance = new API("PUT");
+        instance.url += endPoint;
+        instance.body = data;
+        return instance;
+    }
+
+    static delete(endPoint: string) {
+        const instance = new API("DELETE");
+        instance.url += endPoint;
+        return instance;
+    }
+
     query(params: Params){
         this.params = params;
         return this;

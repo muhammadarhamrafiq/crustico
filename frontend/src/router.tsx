@@ -1,6 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import Home from "./pages/Home";
-import { CreateProduct, ProductManagement, Products } from "./pages/productManagement";
+import { Category, CreateProduct, ProductManagement, Products } from "./pages/productManagement";
 
 export const router = createBrowserRouter([
     {
@@ -26,7 +26,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: "categories",
-                element: <div>Categories</div>,
+                element: <Category />,
             },
             {
                 path: "deals",
