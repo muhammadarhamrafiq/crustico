@@ -7,13 +7,15 @@ interface UseProductsOptions {
     page?: number
     limit?: number
     search?: string
+    category?: string
 }
 
-const useProducts = ({page, limit, search}: UseProductsOptions) => {
+const useProducts = ({page, limit, search, category}: UseProductsOptions) => {
     const [ products, setProducts ] = useState<Product[]>([])
     const [loading, setLoading] = useState(false)
     const [total, setTotal] = useState(0)
     const [pages, setPages] = useState(0)
+    const [refetchTrigger, setRefetchTrigger] = useState(0)
 
     useEffect(() => {
         const controller = new AbortController()
@@ -25,12 +27,14 @@ const useProducts = ({page, limit, search}: UseProductsOptions) => {
                 page: number
                 limit: number
                 search?: string
+                category?: string
             } = {
                 page: page || 1,
                 limit: limit || 20,
             }
 
             if(search) query['search'] = search
+            if(category) query['category'] = category
             
             const data = await API.get("/product").query(query).send()
 
@@ -50,9 +54,11 @@ const useProducts = ({page, limit, search}: UseProductsOptions) => {
         getProducts()
 
         return () => controller.abort()
-    },[limit, page, search])
+    },[limit, page, search,category ,refetchTrigger])
 
-    return {products, loading, pages, total}
+    const refetch = () => setRefetchTrigger((prev) => prev + 1)
+
+    return {products, loading, pages, total, refetch}
 }
 
 export default useProducts

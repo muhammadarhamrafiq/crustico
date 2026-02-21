@@ -15,7 +15,7 @@ const Card = ({ product, editLink, onEdit, onDelete }: CardProps) => {
     return (
         <article className="w-full">
             {
-                <div className="w-full aspect-1 flex items-center justify-center border border-foreground text-center relative">
+                <div className="w-full aspect-square flex items-center justify-center border border-foreground text-center relative">
                     {
                         product.image ? <img src={import.meta.env.VITE_RESOURCE_URL + product.image} alt={product.image} className="w-full h-full object-cover" /> :
                         <span className="text-md">No Image</span>

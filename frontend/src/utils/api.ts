@@ -41,6 +41,13 @@ class API {
         return instance;
     }
 
+    static patch(endPoint: string, data: JSONValue | FormData) {
+        const instance = new API("PATCH");
+        instance.url += endPoint;
+        instance.body = data;
+        return instance;
+    }
+
     static delete(endPoint: string) {
         const instance = new API("DELETE");
         instance.url += endPoint;
